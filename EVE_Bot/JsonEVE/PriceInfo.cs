@@ -10,7 +10,7 @@ namespace EVE_Bot.JsonEVE
     {
         public double max = 0;
         public double min = 0;
-        public int volume = 0;
+        public Int64 volume = 0;
         public string place = "吉";
     }
 }

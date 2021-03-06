@@ -26,9 +26,9 @@ namespace EVE_Bot
         private ClientWebSocket ws = new ClientWebSocket();
         private CancellationToken cancelState = new CancellationToken();
         private BackgroundWorker bgw = new BackgroundWorker();
-
         private Dictionary<Int64, Int64> dicCoolDown = new Dictionary<long, long>();
         private Int64 lastRaiseTime = 0;
+
 
         private void frmMain_Load(object sender, EventArgs e)
         {
@@ -120,31 +120,42 @@ namespace EVE_Bot
                     return;
                 }
             }
-
-
-            if (jsonGrpMsg.message.Contains("骚") || jsonGrpMsg.message.Contains("淫"))
+            else
             {
-                List<string> lstYulu = new List<string>();
-                lstYulu.Add("爬");
-                lstYulu.Add("滚滚滚");
-                lstYulu.Add("怪起来了");
-                strValue += lstYulu[rnd.Next() % lstYulu.Count];
+                //strValue = "[CQ:image,file=/image/Warm/login.jpg]";
+                strValue = "我又回来啦！";
             }
 
-            if (jsonGrpMsg.message.Contains("[CQ:image,file="))
+            if (MoodRequest.lstWarningWord.Where(Dirty => { return jsonGrpMsg.message.Contains(Dirty); }).ToList().Count > 0)
             {
-                //strValue = "[CQ:image,file=https://images.ceve-market.org/status/status.png]";
+                string strDirty = MoodRequest.lstDirtyWord[rnd.Next() % MoodRequest.lstDirtyWord.Count];
+
+                strValue += strDirty;
             }
-            else if (jsonGrpMsg.message.Contains("[CQ:at,qq=" + jsonGrpMsg.self_id.ToString()))
-            //else if (jsonGrpMsg.message.Contains("查询"))
+
+            if (jsonGrpMsg.message.Contains("[CQ:at,qq=" + jsonGrpMsg.self_id.ToString()))
             {
-                strValue = await EVERequest.DealAtRequest(ws, jsonGrpMsg);
+                strValue = MoodRequest.DealAtRequest(ws, jsonGrpMsg);
             }
+            else if (jsonGrpMsg.message.StartsWith("!") || jsonGrpMsg.message.StartsWith("！"))
+            {
+                strValue = EVERequest.DealSearchRequest(ws, jsonGrpMsg);
+            }
+            else if (jsonGrpMsg.message.StartsWith("创建赛马"))
+            {
+                Thread.Sleep(1000);
+                List<string> lstHorse = new List<string>();
+                lstHorse.Add("老娘");
+
+                strValue = "加入赛马 " + lstHorse[rnd.Next() % lstHorse.Count];
+            }
+
+
             else if (jsonGrpMsg.message.Contains("喵"))
             {
                 int nIndex = jsonGrpMsg.message.IndexOf("喵");
-                string strLast = jsonGrpMsg.message.Substring(nIndex);
-                strLast += rnd.Next() % 10 > 6 ? "喵？" : "喵！";
+                string strLast = jsonGrpMsg.message.Substring(nIndex + 1);
+                strLast += rnd.Next() % 10 > 6 ? "喵？" : "！";
                 strValue += strLast;
 
             }

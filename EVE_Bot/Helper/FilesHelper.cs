@@ -13,7 +13,7 @@ namespace EVE_Bot.Helper
     {
         public static void OutputJsonFile(string strFileName, string strContent)
         {
-            string strBasePath = Application.StartupPath + @"\Json\" + strFileName + ".json";
+            string strBasePath = Application.StartupPath + @"\Lib\" + strFileName + ".json";
             if (!Directory.Exists(Path.GetDirectoryName(strBasePath)))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(strBasePath));
@@ -29,7 +29,7 @@ namespace EVE_Bot.Helper
         {
             string strContents;
             string strBasePath = Application.StartupPath;
-            using (var sr = new StreamReader(strBasePath + @"\" + strFileName + ".json", Encoding.Unicode))
+            using (var sr = new StreamReader(strBasePath + @"\Lib\" + strFileName + ".json", Encoding.Unicode))
             {
                 strContents = sr.ReadToEnd();
             }

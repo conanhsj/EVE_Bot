@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EVE_Bot.JsonEVE;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,12 +31,13 @@ namespace EVE_Bot
             }
             return dRnt;
         }
+
         public static string FormatISK(string strISK)
         {
             if (strISK.Length > 10)
             {
                 //亿换算
-                strISK = (Commons.ReadDouble(strISK) / 100000000).ToString();
+                strISK = (Commons.ReadDouble(strISK) / 100000000).ToString("0.0000");
                 if (strISK.Contains('.') && strISK.Length < 6)
                 {
                     strISK = strISK.PadRight(6, '0');
@@ -49,7 +51,7 @@ namespace EVE_Bot
             else if (strISK.Length > 5)
             {
                 //万换算
-                strISK = (Commons.ReadDouble(strISK) / 10000).ToString();
+                strISK = (Commons.ReadDouble(strISK) / 10000).ToString("0.0000");
                 if (strISK.Contains('.') && strISK.Length < 6)
                 {
                     strISK = strISK.PadRight(6, '0');
