@@ -1,13 +1,16 @@
 ﻿using EVE_Bot.AILogic;
 using EVE_Bot.Helper;
 using EVE_Bot.JsonObject;
+using EVE_Bot.JsonSetting;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -23,28 +26,24 @@ namespace EVE_Bot
         {
             InitializeComponent();
         }
+        #region
+        private Random rnd = new Random(100);
         private ClientWebSocket ws = new ClientWebSocket();
         private CancellationToken cancelState = new CancellationToken();
         private BackgroundWorker bgw = new BackgroundWorker();
-        private Dictionary<Int64, Int64> dicCoolDown = new Dictionary<long, long>();
-        private Int64 lastRaiseTime = 0;
+        private static List<JsonGroup> lstGroupSetting = JsonConvert.DeserializeObject<List<JsonGroup>>(FilesHelper.ReadJsonFile("GroupSetting"));
+        private Dictionary<Int64, System.Timers.Timer> dicGroupRepeat = new Dictionary<long, System.Timers.Timer>();
+        #endregion
 
-
+        //初期后台加载
         private void frmMain_Load(object sender, EventArgs e)
         {
             bgw.DoWork += Bgw_DoWork;
             bgw.ProgressChanged += Bgw_ProgressChanged;
             bgw.RunWorkerAsync();
-
-            dicCoolDown.Add(1075423869, 3600);
-            dicCoolDown.Add(443029533, 300);
         }
 
-        private void Bgw_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
+        //后台进程
         private async void Bgw_DoWork(object sender, DoWorkEventArgs e)
         {
             await ws.ConnectAsync(new Uri("ws://127.0.0.1:5700"), cancelState);
@@ -81,55 +80,46 @@ namespace EVE_Bot
             }
         }
 
-        private async void button1_Click(object sender, EventArgs e)
+        //后台相应
+        private void Bgw_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            //var url = "ws://127.0.0.1:5700";
-            //ClientWebSocket ws = new ClientWebSocket();
-            //await ws.ConnectAsync(new Uri(url), cancelState);
-
-            //string strValue = JsonConvert.SerializeObject();
-
-            if (ws.State == WebSocketState.Open)
-            {
-                return;
-            }
-            bgw.RunWorkerAsync();
-
+            throw new NotImplementedException();
         }
-        private Random rnd = new Random(100);
-        private Dictionary<Int64, Int64> dicGroupRepeat = new Dictionary<long, long>();
+
+        //发布提醒
+        private async void btnAnnounce_Click(object sender, EventArgs e)
+        {
+
+            if (ws.State != WebSocketState.Open)
+            {
+                bgw.RunWorkerAsync();
+            }
+            Thread.Sleep(5000);
+
+            foreach (JsonGroup group in lstGroupSetting)
+            {
+                string strBasePath = Application.StartupPath + @"\image\Back\";
+                List<string> lstImage = Directory.EnumerateFiles(strBasePath).ToList();
+                //string strPathImage = WebUtility.HtmlEncode(lstImage[rnd.Next() % lstImage.Count]);
+                string strPathImage = lstImage[rnd.Next() % lstImage.Count].Replace("[", "&#91;").Replace("]", "&#93;");
+                await SendMessage(ws, group.group_id, DateTime.Now.Ticks, "[CQ:image,file=" + strPathImage + "]");
+                //+"我又回来啦！"
+            }
+        }
+
+        //主要入口
         private async Task DealWithMessage(ClientWebSocket ws, JORecvGroupMsg jsonGrpMsg)
         {
-            if (jsonGrpMsg.time - lastRaiseTime < 2)
-            {
-                return;
-            }
+
             if (jsonGrpMsg.message == null)
             {
                 return;
             }
-
-
             string strValue = string.Empty;
-            Int64 nCoolDown = dicCoolDown.ContainsKey(jsonGrpMsg.group_id) ? dicCoolDown[jsonGrpMsg.group_id] : 60;
-            if (dicGroupRepeat.ContainsKey(jsonGrpMsg.group_id))
-            {
-                if (jsonGrpMsg.time - dicGroupRepeat[jsonGrpMsg.group_id] > nCoolDown)
-                {
-                    await SendMessage(ws, jsonGrpMsg.group_id, jsonGrpMsg.time, jsonGrpMsg.message);
-                    return;
-                }
-            }
-            else
-            {
-                //strValue = "[CQ:image,file=/image/Warm/login.jpg]";
-                strValue = "我又回来啦！";
-            }
 
             if (MoodRequest.lstWarningWord.Where(Dirty => { return jsonGrpMsg.message.Contains(Dirty); }).ToList().Count > 0)
             {
                 string strDirty = MoodRequest.lstDirtyWord[rnd.Next() % MoodRequest.lstDirtyWord.Count];
-
                 strValue += strDirty;
             }
 
@@ -146,16 +136,13 @@ namespace EVE_Bot
                 Thread.Sleep(1000);
                 List<string> lstHorse = new List<string>();
                 lstHorse.Add("老娘");
-
                 strValue = "加入赛马 " + lstHorse[rnd.Next() % lstHorse.Count];
             }
-
-
             else if (jsonGrpMsg.message.Contains("喵"))
             {
                 int nIndex = jsonGrpMsg.message.IndexOf("喵");
                 string strLast = jsonGrpMsg.message.Substring(nIndex + 1);
-                strLast += rnd.Next() % 10 > 6 ? "喵？" : "！";
+                strLast += rnd.Next() % 10 > 6 ? "喵？" : "喵！";
                 strValue += strLast;
 
             }
@@ -164,26 +151,55 @@ namespace EVE_Bot
             {
                 await SendMessage(ws, jsonGrpMsg.group_id, jsonGrpMsg.time, strValue);
             }
-
         }
 
+        //发送消息功能重构
         private async Task<string> SendMessage(ClientWebSocket ws, long group_id, long time, string strValue)
         {
             strValue = TemplateBuilder.BuildSendMessage(group_id, strValue, false);
             await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strValue)), WebSocketMessageType.Text, true, cancelState);
+
             if (dicGroupRepeat.ContainsKey(group_id))
             {
-                dicGroupRepeat[group_id] = time;
+                System.Timers.Timer Talking = dicGroupRepeat[group_id];
+                Talking.Stop();
+                Talking.Start();
             }
             else
             {
-                dicGroupRepeat.Add(group_id, time);
+                JsonGroup group = lstGroupSetting.Find(obj => obj.group_id == group_id);
+                System.Timers.Timer Talking = new System.Timers.Timer();
+                Talking.Elapsed += RaiseTalking;
+                Talking.SynchronizingObject = this;
+                Talking.Interval = group.CoolDownTime * 1000;
+                Talking.AutoReset = false;
+                Talking.Start();
+                dicGroupRepeat.Add(group_id, Talking);
             }
 
             return strValue;
         }
 
+        //冷场说话
+        private async void RaiseTalking(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            try
+            {
+                long group_id = dicGroupRepeat.First(obj => { return obj.Value == (System.Timers.Timer)sender; }).Key;
+                JsonGroup group = lstGroupSetting.First(obj => { return obj.group_id == group_id; });
 
+                string strBasePath = Application.StartupPath + @"\image\Kyal\";
+                List<string> lstImage = Directory.EnumerateFiles(strBasePath).ToList();
+                //string strPathImage = WebUtility.HtmlEncode(lstImage[rnd.Next() % lstImage.Count]);
+                string strPathImage = lstImage[rnd.Next() % lstImage.Count].Replace("[", "&#91;").Replace("]", "&#93;");
+                string strValue = TemplateBuilder.BuildSendMessage(group.group_id, strPathImage + "喵？", false);
+                await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strValue)), WebSocketMessageType.Text, true, cancelState);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Warning");
+            }
 
+        }
     }
 }

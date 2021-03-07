@@ -19,8 +19,7 @@ namespace EVE_Bot.AILogic
     {
         public static List<string> lstWarningWord = JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("WarningWord"));
         public static List<string> lstDirtyWord = JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("DirtyWord"));
-
-
+        
         public static string DealAtRequest(ClientWebSocket ws, JORecvGroupMsg jsonGrpMsg)
         {
             string strMessage = string.Empty;//"[CQ:at,qq=" + jsonGrpMsg.user_id + "]";
@@ -82,7 +81,7 @@ namespace EVE_Bot.AILogic
                         strMessage += "我可没那么脏";
                         return strMessage;
                     }
-                    FilesHelper.OutputJsonFile("WarningWord", JsonConvert.SerializeObject(lstWarningWord, Formatting.Indented));
+                    FilesHelper.OutputJsonFile("DirtyWord", JsonConvert.SerializeObject(lstWarningWord, Formatting.Indented));
                     strMessage += "变的更干净了";
                 }
                 else if (strRequest.StartsWith("删除敏感词："))

@@ -28,23 +28,23 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.button1 = new System.Windows.Forms.Button();
+            this.btnAnnounce = new System.Windows.Forms.Button();
             this.rtbInput = new System.Windows.Forms.RichTextBox();
             this.SuspendLayout();
             // 
-            // button1
+            // btnAnnounce
             // 
-            this.button1.Location = new System.Drawing.Point(232, 237);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 0;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.btnAnnounce.Location = new System.Drawing.Point(12, 12);
+            this.btnAnnounce.Name = "btnAnnounce";
+            this.btnAnnounce.Size = new System.Drawing.Size(75, 23);
+            this.btnAnnounce.TabIndex = 0;
+            this.btnAnnounce.Text = "开机提醒";
+            this.btnAnnounce.UseVisualStyleBackColor = true;
+            this.btnAnnounce.Click += new System.EventHandler(this.btnAnnounce_Click);
             // 
             // rtbInput
             // 
-            this.rtbInput.Location = new System.Drawing.Point(12, 12);
+            this.rtbInput.Location = new System.Drawing.Point(248, 12);
             this.rtbInput.Name = "rtbInput";
             this.rtbInput.Size = new System.Drawing.Size(295, 205);
             this.rtbInput.TabIndex = 1;
@@ -56,7 +56,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(618, 349);
             this.Controls.Add(this.rtbInput);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btnAnnounce);
             this.Name = "frmMain";
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.frmMain_Load);
@@ -66,7 +66,7 @@
 
         #endregion
 
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btnAnnounce;
         private System.Windows.Forms.RichTextBox rtbInput;
     }
 }

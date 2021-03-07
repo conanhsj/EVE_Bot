@@ -1,0 +1,4 @@
+*.dll
+EVE_Bot/bin/
+EVE_Bot/obj/
+packages/

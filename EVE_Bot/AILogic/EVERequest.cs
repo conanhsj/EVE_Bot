@@ -36,7 +36,7 @@ namespace EVE_Bot.AILogic
             }
             else
             {
-                strMessage += "哈？";
+                strMessage += "这边没有您需要的服务，请回吧";
             }
             return strMessage;
         }

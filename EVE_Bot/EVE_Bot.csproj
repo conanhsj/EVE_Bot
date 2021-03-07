@@ -71,6 +71,7 @@
     <Compile Include="JsonObject\JOParams.cs" />
     <Compile Include="JsonObject\JORecvGroupMsg.cs" />
     <Compile Include="JsonObject\JOSender.cs" />
+    <Compile Include="JsonSetting\JsonGroup.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="frmMain.resx">
@@ -86,6 +87,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <None Include="Lib\BluePrint.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Lib\GroupSetting.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Lib\WarningWord.json">
