@@ -1,4 +1,4 @@
-﻿using EVE_Bot.Classes;
+﻿
 using EVE_Bot.Helper;
 using EVE_Bot.JsonEVE;
 using EVE_Bot.JsonObject;
@@ -19,7 +19,11 @@ namespace EVE_Bot.AILogic
     {
         public static List<string> lstWarningWord = JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("WarningWord"));
         public static List<string> lstDirtyWord = JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("DirtyWord"));
-        
+
+        public static List<string> lstPrattle = new List<string>();
+        //JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("WarningWord"));
+        public static List<string> lstFlatter = new List<string>();
+        //JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("DirtyWord"));
         public static string DealAtRequest(ClientWebSocket ws, JORecvGroupMsg jsonGrpMsg)
         {
             string strMessage = string.Empty;//"[CQ:at,qq=" + jsonGrpMsg.user_id + "]";
@@ -57,7 +61,7 @@ namespace EVE_Bot.AILogic
                         strMessage += "暂时不可以";
                         return strMessage;
                     }
-                    if (!lstDirtyWord.Contains(strKeyWord))
+                    if (!lstWarningWord.Contains(strKeyWord))
                     {
                         lstWarningWord.Add(strKeyWord);
                     }
@@ -81,13 +85,13 @@ namespace EVE_Bot.AILogic
                         strMessage += "我可没那么脏";
                         return strMessage;
                     }
-                    FilesHelper.OutputJsonFile("DirtyWord", JsonConvert.SerializeObject(lstWarningWord, Formatting.Indented));
+                    FilesHelper.OutputJsonFile("DirtyWord", JsonConvert.SerializeObject(lstDirtyWord, Formatting.Indented));
                     strMessage += "变的更干净了";
                 }
                 else if (strRequest.StartsWith("删除敏感词："))
                 {
                     string strKeyWord = strRequest.Substring(6);
-                    if (lstDirtyWord.Contains(strKeyWord))
+                    if (lstWarningWord.Contains(strKeyWord))
                     {
                         lstWarningWord.Remove(strKeyWord);
                     }
@@ -99,6 +103,47 @@ namespace EVE_Bot.AILogic
                     FilesHelper.OutputJsonFile("WarningWord", JsonConvert.SerializeObject(lstWarningWord, Formatting.Indented));
                     strMessage += "变的更正经了";
                 }
+                else if (strRequest.StartsWith("加入情话："))
+                {
+                    string strKeyWord = strRequest.Substring(5);
+                    if (strKeyWord.Contains("[CQ:"))
+                    {
+                        strMessage += "暂时不可以";
+                        return strMessage;
+                    }
+                    if (!lstPrattle.Contains(strKeyWord))
+                    {
+                        lstPrattle.Add(strKeyWord);
+                    }
+                    else
+                    {
+                        strMessage += "刚刚教过了";
+                        return strMessage;
+                    }
+                    FilesHelper.OutputJsonFile("Prattle", JsonConvert.SerializeObject(lstPrattle, Formatting.Indented));
+                    strMessage += "会更努力的夸你的";
+                }
+                else if (strRequest.StartsWith("加入彩虹屁："))
+                {
+                    string strKeyWord = strRequest.Substring(6);
+                    if (strKeyWord.Contains("[CQ:"))
+                    {
+                        strMessage += "暂时不可以";
+                        return strMessage;
+                    }
+                    if (!lstFlatter.Contains(strKeyWord))
+                    {
+                        lstFlatter.Add(strKeyWord);
+                    }
+                    else
+                    {
+                        strMessage += "刚刚教过了";
+                        return strMessage;
+                    }
+                    FilesHelper.OutputJsonFile("Flatter", JsonConvert.SerializeObject(lstFlatter, Formatting.Indented));
+                    strMessage += "自己都觉得恶心了";
+                }
+
             }
             else
             {

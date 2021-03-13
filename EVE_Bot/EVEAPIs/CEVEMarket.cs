@@ -6,7 +6,7 @@ using System.Net;
 using EVE_Bot.JsonEVE;
 using Newtonsoft.Json;
 
-namespace EVE_Bot.Classes
+namespace EVE_Bot.EVEAPIs
 {
     public static class CEVEMarket
     {
@@ -82,5 +82,86 @@ namespace EVE_Bot.Classes
             return dicResult;
         }
 
+        public static Dictionary<string, Price> SearchPriceRegion(string item)
+        {
+            Dictionary<string, Price> dicResult = new Dictionary<string, Price>();
+            
+            //请求
+            string strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000002/type/{0}.json", item);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(strReqPath);
+            request.Method = "GET";
+
+            using (WebResponse response = request.GetResponse())
+            {
+                Stream stream = response.GetResponseStream();
+                StreamReader sr = new StreamReader(stream);
+                string strJson = sr.ReadToEnd();
+                Price result = JsonConvert.DeserializeObject<Price>(strJson);
+
+                dicResult.Add("伏尔戈", result);
+
+            }
+
+            strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000064/type/{0}.json", item);
+            request = (HttpWebRequest)WebRequest.Create(strReqPath);
+            request.Method = "GET";
+
+            using (WebResponse response = request.GetResponse())
+            {
+                Stream stream = response.GetResponseStream();
+                StreamReader sr = new StreamReader(stream);
+                string strJson = sr.ReadToEnd();
+                Price result = JsonConvert.DeserializeObject<Price>(strJson);
+
+                dicResult.Add("精华之域", result);
+
+            }
+
+            strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000042/type/{0}.json", item);
+            request = (HttpWebRequest)WebRequest.Create(strReqPath);
+            request.Method = "GET";
+
+            using (WebResponse response = request.GetResponse())
+            {
+                Stream stream = response.GetResponseStream();
+                StreamReader sr = new StreamReader(stream);
+                string strJson = sr.ReadToEnd();
+                Price result = JsonConvert.DeserializeObject<Price>(strJson);
+
+                dicResult.Add("美特伯里斯", result);
+
+            }
+
+            strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000043/type/{0}.json", item);
+            request = (HttpWebRequest)WebRequest.Create(strReqPath);
+            request.Method = "GET";
+
+            using (WebResponse response = request.GetResponse())
+            {
+                Stream stream = response.GetResponseStream();
+                StreamReader sr = new StreamReader(stream);
+                string strJson = sr.ReadToEnd();
+                Price result = JsonConvert.DeserializeObject<Price>(strJson);
+
+                dicResult.Add("多美", result);
+
+            }
+
+            strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000049/type/{0}.json", item);
+            request = (HttpWebRequest)WebRequest.Create(strReqPath);
+            request.Method = "GET";
+
+            using (WebResponse response = request.GetResponse())
+            {
+                Stream stream = response.GetResponseStream();
+                StreamReader sr = new StreamReader(stream);
+                string strJson = sr.ReadToEnd();
+                Price result = JsonConvert.DeserializeObject<Price>(strJson);
+
+                dicResult.Add("卡尼迪", result);
+
+            }
+            return dicResult;
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using EVE_Bot.Classes;
+﻿using EVE_Bot.EVEAPIs;
 using EVE_Bot.Helper;
 using EVE_Bot.JsonEVE;
 using EVE_Bot.JsonObject;
@@ -34,17 +34,75 @@ namespace EVE_Bot.AILogic
             {
                 strMessage = SearchPrice(strMessage, strRequest);
             }
+            else if (strRequest.StartsWith("查询广域"))
+            {
+                strMessage = SearchRange(strMessage, strRequest);
+            }
             else
             {
                 strMessage += "这边没有您需要的服务，请回吧";
             }
             return strMessage;
         }
+
+        private static string SearchRange(string strMessage, string strRequest)
+        {
+            string strKeyWord = string.Empty;
+            //去掉最前边的"查询价格"字眼
+            strKeyWord = strRequest.Substring(4).Trim();
+            if (strKeyWord.Length < 3)
+            {
+                throw new Exception("太短了，下次再长点。");
+            }
+            List<Item> lstSearch = lstItem.FindAll(Item => Item.Name == strKeyWord);
+
+            //二次筛选
+            if (lstSearch.Count != 1)
+            {
+                strMessage += "本功能仅支持单商品查询，请通过查询价格或蓝图确认物品名称";
+                return strMessage;
+            }
+            //提取ID列表
+            List<string> lstTypeID = lstSearch.Select(obj => { return obj.TypeID; }).ToList();
+
+            if (lstTypeID.Count == 0)
+            {
+                strMessage += "没找到物品ID";
+            }
+            else if (lstTypeID.Count == 1)
+            {
+                //查询价格
+                Dictionary<string, Price> dicResult = CEVEMarket.SearchPriceRegion(lstTypeID[0]);
+
+
+
+                strMessage += strKeyWord + "在以下星域的价格为：\n";
+                foreach (string strKey in dicResult.Keys)
+                {
+                    string strSell = dicResult[strKey].sell.min == 0 ? "无货" : Commons.FormatISK(dicResult[strKey].sell.min.ToString("0.00")).TrimEnd('0');
+                    string strBuy = dicResult[strKey].buy.max == 0 ? "无货" : Commons.FormatISK(dicResult[strKey].buy.max.ToString("0.00")).TrimEnd('0');
+                    strMessage += strKey.PadRight(6, '　') + "出售：" + strSell.TrimEnd('.').PadLeft(7, ' ') + " 收购：" + strBuy.TrimEnd('.').PadLeft(7, ' ') + "\n";
+                }
+                if (string.IsNullOrEmpty(strMessage))
+                {
+                    strMessage += "冇得买啦";
+                }
+                strMessage = strMessage.TrimEnd('\n');
+            }
+
+            return strMessage;
+        }
+
         private static string SearchPrice(string strMessage, string strRequest)
         {
             string strKeyWord = string.Empty;
             //去掉最前边的"查询价格"字眼
             strKeyWord = strRequest.Substring(4).Trim();
+            if (strKeyWord.Length < 3)
+            {
+                throw new Exception("太短了，下次再长点。");
+            }
+
             List<Item> lstSearch = lstItem.FindAll(Item => Item.Name.Contains(strKeyWord) && !Item.Name.Contains("蓝图"));
 
             //二次筛选
@@ -59,7 +117,7 @@ namespace EVE_Bot.AILogic
             {
                 strMessage += "没找到物品";
             }
-            else if (lstTypeID.Count < 20)
+            else if (lstTypeID.Count < 40)
             {
                 //查询价格
                 Dictionary<string, Price> dicResult = CEVEMarket.SearchPriceJson(lstTypeID);
@@ -91,12 +149,16 @@ namespace EVE_Bot.AILogic
             }
             else
             {
-                strMessage += "太多了，不想写";
+                strMessage += "你要找的是不是里的某个？\n";
+                foreach (Item obj in lstSearch)
+                {
+
+                    strMessage += obj.Name + "\n";
+                }
+                strMessage = strMessage.TrimEnd('\n');
             }
             return strMessage;
         }
-
-
 
         private static string SearchBluePrint(string strMessage, string strRequest)
         {
@@ -122,7 +184,10 @@ namespace EVE_Bot.AILogic
             {
                 strKeyWord = strRequest;
             }
-
+            if (strKeyWord.Length < 3)
+            {
+                throw new Exception("太短了，下次再长点。");
+            }
             //查找和计算
             BluePrint bluePrint = lstBluePrint.Find(Item => Item.BPName == strKeyWord || Item.ProductName == strKeyWord);
 
@@ -203,7 +268,7 @@ namespace EVE_Bot.AILogic
             else
             {
                 List<BluePrint> lstResult = lstBluePrint.FindAll(Item => Item.BPName.Contains(strKeyWord) || Item.ProductName.Contains(strKeyWord));
-                if (lstResult.Count > 20)
+                if (lstResult.Count > 100)
                 {
                     throw new Exception("实在太多了算不过来！");
                 }

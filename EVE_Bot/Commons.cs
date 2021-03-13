@@ -34,10 +34,10 @@ namespace EVE_Bot
 
         public static string FormatISK(string strISK)
         {
-            if (strISK.Length > 10)
+            if (strISK.Length > 11)
             {
                 //亿换算
-                strISK = (Commons.ReadDouble(strISK) / 100000000).ToString("0.0000");
+                strISK = (Commons.ReadDouble(strISK) / 100000000).ToString("0.0000").TrimEnd('0');
                 if (strISK.Contains('.') && strISK.Length < 6)
                 {
                     strISK = strISK.PadRight(6, '0');
@@ -48,10 +48,10 @@ namespace EVE_Bot
                 }
                 strISK += "亿";
             }
-            else if (strISK.Length > 5)
+            else if (strISK.Length > 6)
             {
                 //万换算
-                strISK = (Commons.ReadDouble(strISK) / 10000).ToString("0.0000");
+                strISK = (Commons.ReadDouble(strISK) / 10000).ToString("0.0000").TrimEnd('0');
                 if (strISK.Contains('.') && strISK.Length < 6)
                 {
                     strISK = strISK.PadRight(6, '0');

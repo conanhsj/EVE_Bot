@@ -48,6 +48,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AILogic\HSORequest.cs" />
     <Compile Include="AILogic\MoodRequest.cs" />
     <Compile Include="AILogic\EVERequest.cs" />
     <Compile Include="Commons.cs" />
@@ -62,6 +63,7 @@
     <Compile Include="Helper\TemplateBuilder.cs" />
     <Compile Include="JsonEVE\BluePrint.cs" />
     <Compile Include="JsonEVE\BluePrintMtls.cs" />
+    <Compile Include="JsonEVE\ESIAccessKey.cs" />
     <Compile Include="JsonEVE\Item.cs" />
     <Compile Include="JsonEVE\Price.cs" />
     <Compile Include="JsonEVE\PriceInfo.cs" />
@@ -72,6 +74,8 @@
     <Compile Include="JsonObject\JORecvGroupMsg.cs" />
     <Compile Include="JsonObject\JOSender.cs" />
     <Compile Include="JsonSetting\JsonGroup.cs" />
+    <Compile Include="JsonSetu\JOData.cs" />
+    <Compile Include="JsonSetu\JOResponse.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="frmMain.resx">
@@ -87,6 +91,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <None Include="Lib\BluePrint.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Lib\ESISetting.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Lib\GroupSetting.json">
