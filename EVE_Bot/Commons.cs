@@ -1,8 +1,11 @@
 ﻿using EVE_Bot.JsonEVE;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -10,6 +13,17 @@ namespace EVE_Bot
 {
     public static class Commons
     {
+        public static Regex regCQCode = new Regex(@"(?:\[CQ:.*\])");
+
+        public static string RemoveCQCode(string strMessage)
+        {
+            while (regCQCode.IsMatch(strMessage))
+            {
+                strMessage = regCQCode.Replace(strMessage, "");
+            }
+            return strMessage;
+        }
+
         public static double ReadDouble(string strCell)
         {
             double dRnt = 0;
@@ -68,6 +82,36 @@ namespace EVE_Bot
             }
 
             return strISK;
+        }
+
+        public static string DrawKyalImage(string strInfo)
+        {
+
+            string strPath = string.Empty;
+
+            int width = 800;
+            int height = 600;
+            int margin = 10;
+            string strBasePath = Application.StartupPath + @"\image\BaseSource\Base.png";
+            Bitmap bitKyal = new Bitmap(strBasePath);
+
+
+            Bitmap bitmapobj = new Bitmap(width, height);
+            Graphics g = Graphics.FromImage(bitmapobj);
+            Font font = new Font("宋体", 12);
+            Color KyalPink = Color.FromArgb(255, 205, 235);
+            Color KyalPurp = Color.FromArgb(110, 100, 115);
+            SolidBrush brush = new SolidBrush(KyalPurp);//新建一个画刷
+            Pen p = new Pen(Color.Black, 3);//定义了一个画笔
+            g.Clear(KyalPink);
+            g.DrawRectangle(p, margin, margin, width - (2 * margin), height - (2 * margin));//
+            g.DrawString(strInfo, font, brush, 20, 20);//
+            g.DrawImage(bitKyal, width - bitKyal.Width, height - bitKyal.Height);
+
+            bitmapobj.Save(Application.StartupPath + @"\image\ImageSource\KyalImage.png", ImageFormat.Png);//保存为输出流，否则页面上显示不出来
+            g.Dispose();//释放掉该资源
+
+            return Application.StartupPath + @"\image\ImageSource\KyalImage.png";
         }
     }
 }

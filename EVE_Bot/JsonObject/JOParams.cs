@@ -9,6 +9,7 @@ namespace EVE_Bot.JsonObject
     public class JOParams
     {
         public Int64 group_id;
+        public long user_id;
         public string message;
         public bool auto_escape;
 

@@ -23,5 +23,17 @@ namespace EVE_Bot.Helper
             return strValue;
         }
 
+        public static string BuildSendMessagePrivate(Int64 userId, string Message, bool AutoEscape)
+        {
+            JOParams jsonParams = new JOParams();
+            jsonParams.user_id = userId;
+            jsonParams.message = Message;
+            jsonParams.auto_escape = AutoEscape;
+            JOAPI jsonAPI = new JOAPI();
+            jsonAPI.action = "send_private_msg";
+            jsonAPI.joParams = jsonParams;
+            string strValue = JsonConvert.SerializeObject(jsonAPI);
+            return strValue;
+        }
     }
 }

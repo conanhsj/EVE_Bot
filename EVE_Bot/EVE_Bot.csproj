@@ -36,6 +36,7 @@
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -48,9 +49,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AILogic\AIRequest.cs" />
     <Compile Include="AILogic\HSORequest.cs" />
     <Compile Include="AILogic\MoodRequest.cs" />
     <Compile Include="AILogic\EVERequest.cs" />
+    <Compile Include="AILogic\WolfRequest.cs" />
     <Compile Include="Commons.cs" />
     <Compile Include="EVEAPIs\CEVEMarket.cs" />
     <Compile Include="frmMain.cs">
@@ -61,12 +64,14 @@
     </Compile>
     <Compile Include="Helper\FilesHelper.cs" />
     <Compile Include="Helper\TemplateBuilder.cs" />
+    <Compile Include="Interface\IMessageRequest.cs" />
     <Compile Include="JsonEVE\BluePrint.cs" />
     <Compile Include="JsonEVE\BluePrintMtls.cs" />
     <Compile Include="JsonEVE\ESIAccessKey.cs" />
     <Compile Include="JsonEVE\Item.cs" />
     <Compile Include="JsonEVE\Price.cs" />
     <Compile Include="JsonEVE\PriceInfo.cs" />
+    <Compile Include="JsonGame\WolfChara.cs" />
     <Compile Include="JsonObject\JOAPI.cs" />
     <Compile Include="JsonObject\JOData.cs" />
     <Compile Include="JsonObject\JOGroupMessage.cs" />

@@ -16,6 +16,8 @@ namespace EVE_Bot.JsonSetting
         public int CoolDownTime;
         [JsonIgnore]
         public long last_time;
+        [JsonIgnore]
+        public string RepeatCheck;
 
     }
 }

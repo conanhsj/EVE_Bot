@@ -20,9 +20,9 @@ namespace EVE_Bot.AILogic
         public static List<string> lstWarningWord = JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("WarningWord"));
         public static List<string> lstDirtyWord = JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("DirtyWord"));
 
-        public static List<string> lstPrattle = new List<string>();
+        public static List<string> lstPrattle = JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("Prattle"));
         //JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("WarningWord"));
-        public static List<string> lstFlatter = new List<string>();
+        public static List<string> lstFlatter = JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("Flatter"));
         //JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("DirtyWord"));
         public static string DealAtRequest(ClientWebSocket ws, JORecvGroupMsg jsonGrpMsg)
         {
