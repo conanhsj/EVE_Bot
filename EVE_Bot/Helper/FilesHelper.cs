@@ -29,6 +29,12 @@ namespace EVE_Bot.Helper
         {
             string strContents;
             string strBasePath = Application.StartupPath;
+            string strFinalName = strBasePath + @"\Lib\" + strFileName + ".json";
+            if (!File.Exists(strFinalName))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(strFinalName));
+                File.Create(strBasePath + @"\Lib\" + strFileName + ".json").Close();
+            }
             using (var sr = new StreamReader(strBasePath + @"\Lib\" + strFileName + ".json", Encoding.Unicode))
             {
                 strContents = sr.ReadToEnd();

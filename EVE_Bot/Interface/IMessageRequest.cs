@@ -9,6 +9,8 @@ namespace EVE_Bot.Interface
 {
     public interface IMessageRequest
     {
-        string DealRequest(JORecvGroupMsg jsonGrpMsg);
+        string DealGroupRequest(JORecvGroupMsg jsonGrpMsg);
+
+        string DealPrivateRequest(JORecvGroupMsg jsonGrpMsg);
     }
 }

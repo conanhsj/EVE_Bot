@@ -13,6 +13,7 @@ namespace EVE_Bot
 {
     public static class Commons
     {
+        public static Random rnd = new Random(100);
         public static Regex regCQCode = new Regex(@"(?:\[CQ:.*\])");
 
         public static string RemoveCQCode(string strMessage)
@@ -30,7 +31,7 @@ namespace EVE_Bot
             strCell = strCell.Replace(",", "");
             if (!double.TryParse(strCell, out dRnt))
             {
-                MessageBox.Show("数值转换错误:" + strCell);
+
             }
             return dRnt;
         }
@@ -41,7 +42,7 @@ namespace EVE_Bot
             strCell = strCell.Replace(",", "");
             if (!int.TryParse(strCell, out dRnt))
             {
-                MessageBox.Show("数值转换错误:" + strCell);
+        
             }
             return dRnt;
         }
@@ -62,7 +63,7 @@ namespace EVE_Bot
                 }
                 strISK += "亿";
             }
-            else if (strISK.Length > 6)
+            else if (strISK.Length > 7)
             {
                 //万换算
                 strISK = (Commons.ReadDouble(strISK) / 10000).ToString("0.0000").TrimEnd('0');
@@ -86,6 +87,7 @@ namespace EVE_Bot
 
         public static string DrawKyalImage(string strInfo)
         {
+            strInfo = strInfo.Replace(",", "\t").Replace("=", "==").Replace("：", "：\t");
 
             string strPath = string.Empty;
 
@@ -108,10 +110,14 @@ namespace EVE_Bot
             g.DrawString(strInfo, font, brush, 20, 20);//
             g.DrawImage(bitKyal, width - bitKyal.Width, height - bitKyal.Height);
 
-            bitmapobj.Save(Application.StartupPath + @"\image\ImageSource\KyalImage.png", ImageFormat.Png);//保存为输出流，否则页面上显示不出来
+
+            string strPathImage = Application.StartupPath + @"\image\ImageSource\KyalImage.png";
+            bitmapobj.Save(strPathImage, ImageFormat.Png);//保存为输出流，否则页面上显示不出来
             g.Dispose();//释放掉该资源
 
-            return Application.StartupPath + @"\image\ImageSource\KyalImage.png";
+
+            strPathImage = strPathImage.Replace("[", "&#91;").Replace("]", "&#93;");
+            return "[CQ:image,file=" + strPathImage + "]";
         }
     }
 }

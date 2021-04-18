@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="HtmlAgilityPack, Version=1.11.32.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>..\packages\HtmlAgilityPack.1.11.32\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -53,6 +56,8 @@
     <Compile Include="AILogic\HSORequest.cs" />
     <Compile Include="AILogic\MoodRequest.cs" />
     <Compile Include="AILogic\EVERequest.cs" />
+    <Compile Include="AILogic\RollRequest.cs" />
+    <Compile Include="AILogic\UraraRequest.cs" />
     <Compile Include="AILogic\WolfRequest.cs" />
     <Compile Include="Commons.cs" />
     <Compile Include="EVEAPIs\CEVEMarket.cs" />
@@ -66,11 +71,16 @@
     <Compile Include="Helper\TemplateBuilder.cs" />
     <Compile Include="Interface\IMessageRequest.cs" />
     <Compile Include="JsonEVE\BluePrint.cs" />
+    <Compile Include="JsonEVE\RecycleMtls.cs" />
     <Compile Include="JsonEVE\BluePrintMtls.cs" />
     <Compile Include="JsonEVE\ESIAccessKey.cs" />
     <Compile Include="JsonEVE\Item.cs" />
     <Compile Include="JsonEVE\Price.cs" />
     <Compile Include="JsonEVE\PriceInfo.cs" />
+    <Compile Include="JsonEVE\Recycle.cs" />
+    <Compile Include="JsonEVE\Wormhole.cs" />
+    <Compile Include="JsonEVE\WormholeSystem.cs" />
+    <Compile Include="JsonGame\Urara.cs" />
     <Compile Include="JsonGame\WolfChara.cs" />
     <Compile Include="JsonObject\JOAPI.cs" />
     <Compile Include="JsonObject\JOData.cs" />
@@ -79,6 +89,7 @@
     <Compile Include="JsonObject\JORecvGroupMsg.cs" />
     <Compile Include="JsonObject\JOSender.cs" />
     <Compile Include="JsonSetting\JsonGroup.cs" />
+    <Compile Include="JsonSetting\JsonWords.cs" />
     <Compile Include="JsonSetu\JOData.cs" />
     <Compile Include="JsonSetu\JOResponse.cs" />
     <Compile Include="Program.cs" />
@@ -111,7 +122,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Lib\ItemID.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Lib\Wormhole.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

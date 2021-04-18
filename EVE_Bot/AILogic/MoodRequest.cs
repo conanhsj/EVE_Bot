@@ -24,6 +24,8 @@ namespace EVE_Bot.AILogic
         //JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("WarningWord"));
         public static List<string> lstFlatter = JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("Flatter"));
         //JsonConvert.DeserializeObject<List<string>>(FilesHelper.ReadJsonFile("DirtyWord"));
+
+        public static Dictionary<long, string> dicMemo = new Dictionary<long, string>();
         public static string DealAtRequest(ClientWebSocket ws, JORecvGroupMsg jsonGrpMsg)
         {
             string strMessage = string.Empty;//"[CQ:at,qq=" + jsonGrpMsg.user_id + "]";
@@ -31,7 +33,7 @@ namespace EVE_Bot.AILogic
 
             if (match.Success)
             {
-                string strRequest = match.Value.Trim(']', ' ');
+                string strRequest = Commons.RemoveCQCode(jsonGrpMsg.message).Trim();
                 if (strRequest.StartsWith("加入脏话："))
                 {
                     string strKeyWord = strRequest.Substring(5);
@@ -49,7 +51,7 @@ namespace EVE_Bot.AILogic
                         strMessage += "已经会了，火星人";
                         return strMessage;
                     }
-                 
+
                     FilesHelper.OutputJsonFile("DirtyWord", JsonConvert.SerializeObject(lstDirtyWord, Formatting.Indented));
                     strMessage += "变的更脏了";
                 }
@@ -143,7 +145,36 @@ namespace EVE_Bot.AILogic
                     FilesHelper.OutputJsonFile("Flatter", JsonConvert.SerializeObject(lstFlatter, Formatting.Indented));
                     strMessage += "自己都觉得恶心了";
                 }
+                else
+                {
 
+                    if (!string.IsNullOrEmpty(strRequest))
+                    {
+                        if (dicMemo.ContainsKey(jsonGrpMsg.user_id))
+                        {
+                            string strMemo = dicMemo[jsonGrpMsg.user_id];
+                            strMessage += "明明刚才说" + strMemo + "的，";
+                            dicMemo.Remove(jsonGrpMsg.user_id);
+                        }
+                        dicMemo.Add(jsonGrpMsg.user_id, strRequest);
+                        FilesHelper.OutputJsonFile("Memo", JsonConvert.SerializeObject(dicMemo, Formatting.Indented));
+                        strMessage += "行吧，我记下来了。";
+                    }
+                    else
+                    {
+                        if (dicMemo.ContainsKey(jsonGrpMsg.user_id))
+                        {
+                            string strMemo = dicMemo[jsonGrpMsg.user_id];
+                            strMessage += "你要" + strMemo + "来着，去吧";
+                            dicMemo.Remove(jsonGrpMsg.user_id);
+                        }
+                        else
+                        {
+                            strMessage += "瞎@个什么嘛，烦死了";
+                        }
+                    }
+
+                }
             }
             else
             {

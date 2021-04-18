@@ -37,7 +37,7 @@ namespace EVE_Bot
             InitializeComponent();
         }
         #region
-        private Random rnd = new Random(100);
+
 
         //各Q群设置
         private static List<JsonGroup> lstGroupSetting = JsonConvert.DeserializeObject<List<JsonGroup>>(FilesHelper.ReadJsonFile("GroupSetting"));
@@ -48,7 +48,7 @@ namespace EVE_Bot
         private Dictionary<Int64, System.Timers.Timer> dicGroupRepeat = new Dictionary<long, System.Timers.Timer>();
 
         //模块化
-        private Dictionary<string, string> dicModuleConfig = new Dictionary<string, string>() { { "狼人杀", "WolfRequest" } };
+        private Dictionary<string, string> dicModuleConfig = new Dictionary<string, string>() { { "狼人杀", "WolfRequest" }, { "Roll", "RollRequest" }, { "占卜", "UraraRequest" } };
         //模块化
         private Dictionary<string, Lazy<IMessageRequest>> dicRequestModule = new Dictionary<string, Lazy<IMessageRequest>>();
         private Dictionary<string, IMessageRequest> dicModule = new Dictionary<string, IMessageRequest>();
@@ -130,7 +130,7 @@ namespace EVE_Bot
                         {
                             group = new JsonGroup();
                             group.group_id = jsonGrpMsg.group_id;
-                            group.CoolDownTime = 3600;
+                            group.CoolDownTime = 7200;
                             group.last_time = jsonGrpMsg.time;
                             lstGroupSetting.Add(group);
                             FilesHelper.OutputJsonFile("GroupSetting", JsonConvert.SerializeObject(lstGroupSetting, Formatting.Indented));
@@ -155,7 +155,28 @@ namespace EVE_Bot
         private async Task DealWithMessagePrivateAsync(ClientWebSocket ws, JORecvGroupMsg jsonGrpMsg)
         {
             string strValue = string.Empty;
-            strValue += rnd.Next() % 100 < 10 ? "喵" : "";
+            strValue += Commons.rnd.Next() % 100 < 10 ? "喵" : "";
+
+            if (dicModuleConfig.Keys.Where(Keys => { return jsonGrpMsg.message.StartsWith(Keys); }).ToList().Count > 0)
+            {
+                string strKey = dicModuleConfig.Keys.Where(Keys => { return jsonGrpMsg.message.StartsWith(Keys); }).First();
+                Lazy<IMessageRequest> objModuleLazy = dicRequestModule[dicModuleConfig[strKey]];
+
+                if (!objModuleLazy.IsValueCreated)
+                {
+                    IMessageRequest objModule = objModuleLazy.Value;
+                    dicModule.Add(strKey, objModule);
+                    strValue += "那个功能还没睡醒，等我叫一下试试";
+                }
+                else
+                {
+                    strValue += dicModule[strKey].DealPrivateRequest(jsonGrpMsg);
+                }
+            }
+            else
+            {
+                strValue = EVERequest.DealSearchRequest(ws, jsonGrpMsg);
+            }
 
             string strMessage = TemplateBuilder.BuildSendMessagePrivate(jsonGrpMsg.user_id, strValue, false);
             await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessage)), WebSocketMessageType.Text, true, cancelState);
@@ -181,7 +202,7 @@ namespace EVE_Bot
             {
                 string strBasePath = Application.StartupPath + @"\image\Back\";
                 List<string> lstImage = Directory.EnumerateFiles(strBasePath).ToList();
-                string strPathImage = lstImage[rnd.Next() % lstImage.Count].Replace("[", "&#91;").Replace("]", "&#93;");
+                string strPathImage = lstImage[Commons.rnd.Next() % lstImage.Count].Replace("[", "&#91;").Replace("]", "&#93;");
 
                 await SendMessage(ws, group.group_id, DateTime.Now.Ticks, "[CQ:image,file=" + strPathImage + "]");
                 //+"我又回来啦！"
@@ -198,6 +219,17 @@ namespace EVE_Bot
             }
             string strValue = string.Empty;
             JsonGroup group = lstGroupSetting.Find(obj => obj.group_id == jsonGrpMsg.group_id);
+
+            //过于频繁
+            if (!string.IsNullOrEmpty(group.RepeatCheck) && jsonGrpMsg.message.Contains(group.RepeatCheck)
+                && jsonGrpMsg.time - group.last_time < 5)
+            {
+                strValue = "你们好烦呐";
+                await SendMessage(ws, jsonGrpMsg.group_id, jsonGrpMsg.time, strValue);
+                return;
+            }
+
+            //队形打断
             if (!string.IsNullOrEmpty(group.RepeatCheck) && group.RepeatCheck == Commons.RemoveCQCode(jsonGrpMsg.message))
             {
                 strValue = "不许学我说话";
@@ -205,17 +237,39 @@ namespace EVE_Bot
                 return;
             }
 
+            //套娃禁止
+            if (!string.IsNullOrEmpty(group.RepeatCheck) && jsonGrpMsg.message.Contains(group.RepeatCheck))
+            {
+                int nIndex = jsonGrpMsg.message.IndexOf(group.RepeatCheck);
+                string strBefore = jsonGrpMsg.message.Substring(0, nIndex);
+                string strAfter = jsonGrpMsg.message.Substring(nIndex + group.RepeatCheck.Length);
+                if ((!string.IsNullOrEmpty(strBefore) && group.RepeatCheck.Contains(strBefore)) ||
+                     (!string.IsNullOrEmpty(strAfter) && group.RepeatCheck.Contains(strAfter)))
+                {
+                    strValue = "不许套娃";
+                    await SendMessage(ws, jsonGrpMsg.group_id, jsonGrpMsg.time, strValue);
+                    return;
+                }
+            }
+
             //情话→彩虹屁
             if (MoodRequest.lstPrattle.Where(Prattle => { return jsonGrpMsg.message.Contains(Prattle); }).ToList().Count > 0)
             {
-                string strFlatter = MoodRequest.lstFlatter[rnd.Next() % MoodRequest.lstFlatter.Count];
+                string strFlatter = MoodRequest.lstFlatter[Commons.rnd.Next() % MoodRequest.lstFlatter.Count];
                 strValue += strFlatter;
             }
             //敏感词→脏话
             if (MoodRequest.lstWarningWord.Where(Dirty => { return jsonGrpMsg.message.Contains(Dirty); }).ToList().Count > 0)
             {
-                string strDirty = MoodRequest.lstDirtyWord[rnd.Next() % MoodRequest.lstDirtyWord.Count];
+                string strDirty = MoodRequest.lstDirtyWord[Commons.rnd.Next() % MoodRequest.lstDirtyWord.Count];
                 strValue += strDirty;
+                if (jsonGrpMsg.message.Split(new string[] { "喵" }, StringSplitOptions.None).Length > 3)
+                {
+
+                    strValue += "喵那么多干嘛啊！";
+                    await SendMessage(ws, jsonGrpMsg.group_id, jsonGrpMsg.time, strValue);
+                    return;
+                }
             }
 
             if (jsonGrpMsg.message.Contains("[CQ:at,qq=" + jsonGrpMsg.self_id.ToString()))
@@ -230,7 +284,7 @@ namespace EVE_Bot
                 lstHorse.Add("目白麦昆");
                 lstHorse.Add("特别周");
                 lstHorse.Add("米浴");
-                strValue = "加入赛马 " + lstHorse[rnd.Next() % lstHorse.Count];
+                strValue = "加入赛马 " + lstHorse[Commons.rnd.Next() % lstHorse.Count];
             }
             else if (dicModuleConfig.Keys.Where(Keys => { return jsonGrpMsg.message.StartsWith(Keys); }).ToList().Count > 0)
             {
@@ -245,18 +299,18 @@ namespace EVE_Bot
                 }
                 else
                 {
-                    strValue += dicModule[strKey].DealRequest(jsonGrpMsg);
+                    strValue += dicModule[strKey].DealGroupRequest(jsonGrpMsg);
                 }
             }
             else if (jsonGrpMsg.message.EndsWith("色图") || jsonGrpMsg.message.Contains("涩图"))
             {
-                if (jsonGrpMsg.time - group.last_time < 60)
+                if (jsonGrpMsg.time - group.last_time < 300)
                 {
                     string strBasePath = Application.StartupPath + @"\image\CoolDown\";
                     List<string> lstImage = Directory.EnumerateFiles(strBasePath).ToList();
                     //string strPathImage = WebUtility.HtmlEncode(lstImage[rnd.Next() % lstImage.Count]);
-                    string strPathImage = lstImage[rnd.Next() % lstImage.Count].Replace("[", "&#91;").Replace("]", "&#93;");
-                    strValue = "[CQ:image,file=" + strPathImage + "]";
+                    string strPathImage = lstImage[Commons.rnd.Next() % lstImage.Count].Replace("[", "&#91;").Replace("]", "&#93;");
+                    strValue = "[CQ:image,file=" + strPathImage + "]MD老娘死过一次叻，你们老实点";
                 }
                 else
                 {
@@ -266,12 +320,10 @@ namespace EVE_Bot
                     {
                         foreach (JsonSetu.JOData Image in jOResponse.data)
                         {
-                            strValue += "[CQ:image,file=" + Image.url + ",cache=1]";
+                            //strValue += "[CQ:image,file=" + Image.url + ",cache=1]";
+                            strValue += "作者：" + Image.author + " 标题：" + Image.title + "\n";
+                            strValue += Image.url;
                         }
-                    }
-                    else
-                    {
-                        strValue = "失败了，先等一会";
                     }
                 }
             }
@@ -279,14 +331,6 @@ namespace EVE_Bot
             else if (jsonGrpMsg.message.StartsWith("!") || jsonGrpMsg.message.StartsWith("！"))
             {
                 strValue = EVERequest.DealSearchRequest(ws, jsonGrpMsg);
-
-                if (strValue.Length > 550)
-                {
-                    string strBasePath = Commons.DrawKyalImage(strValue);
-                    //string strPathImage = WebUtility.HtmlEncode(lstImage[rnd.Next() % lstImage.Count]);
-                    string strPathImage = strBasePath.Replace("[", "&#91;").Replace("]", "&#93;");
-                    strValue = "[CQ:image,file=" + strPathImage + "]";
-                }
                 await SendMessage(ws, jsonGrpMsg.group_id, jsonGrpMsg.time, strValue);
                 return;
             }
@@ -295,17 +339,26 @@ namespace EVE_Bot
             {
                 strValue += AIRequest.DealOtherRequest(jsonGrpMsg);
             }
-            if (jsonGrpMsg.message.Contains("喵") && !jsonGrpMsg.message.Contains("喵子"))
+            // 避免喵子的触发
+            if (jsonGrpMsg.message.Split(new string[] { "喵" }, StringSplitOptions.None).Length >
+                jsonGrpMsg.message.Split(new string[] { "喵子", "喵祖", "喵隼", "喵帕斯" }, StringSplitOptions.None).Length)
             {
-                //int nIndex = jsonGrpMsg.message.IndexOf("喵");
-                //string strLast = jsonGrpMsg.message.Substring(nIndex + 1);
-                string strLast = rnd.Next() % 10 > 6 ? "喵？" : "喵！";
-                strValue += jsonGrpMsg.message + strLast;
+                int nCount = jsonGrpMsg.message.Split(new string[] { "喵" }, StringSplitOptions.None).Length;
+                if (nCount > 100)
+                {
+                    strValue += "你喵那么多干嘛啦";
+                }
+                else
+                {
+                    //int nIndex = jsonGrpMsg.message.IndexOf("喵");
+                    //string strLast = jsonGrpMsg.message.Substring(nIndex + 1);
+                    string strLast = Commons.rnd.Next() % 10 > 6 ? "喵？" : "喵！";
+                    strValue += jsonGrpMsg.message + strLast;
+                }
             }
 
             if (!string.IsNullOrEmpty(strValue))
             {
-                strValue += rnd.Next() % 100 < 10 ? "喵" : "";
                 await SendMessage(ws, jsonGrpMsg.group_id, jsonGrpMsg.time, strValue);
             }
         }
@@ -313,6 +366,7 @@ namespace EVE_Bot
         //发送消息功能重构
         private async Task SendMessage(ClientWebSocket ws, long group_id, long time, string strValue)
         {
+            strValue += Commons.rnd.Next() % 100 < 10 ? "喵" : "";
             string strMessage = TemplateBuilder.BuildSendMessage(group_id, strValue, false);
             await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessage)), WebSocketMessageType.Text, true, cancelState);
             JsonGroup group = lstGroupSetting.Find(obj => obj.group_id == group_id);
@@ -351,16 +405,40 @@ namespace EVE_Bot
                 string strBasePath = Application.StartupPath + @"\image\Kyal\";
                 List<string> lstImage = Directory.EnumerateFiles(strBasePath).ToList();
                 //string strPathImage = WebUtility.HtmlEncode(lstImage[rnd.Next() % lstImage.Count]);
-                string strPathImage = lstImage[rnd.Next() % lstImage.Count].Replace("[", "&#91;").Replace("]", "&#93;");
+                string strPathImage = lstImage[Commons.rnd.Next() % lstImage.Count].Replace("[", "&#91;").Replace("]", "&#93;");
 
-                string strValue = TemplateBuilder.BuildSendMessage(group.group_id, "[CQ:image,file=" + strPathImage + "]没有活人了喵？", false);
+
+                string strWord = string.Empty;
+                if (DateTime.Now.Hour < 11)
+                {
+                    strWord += "都还没睡醒呢喵？";
+                }
+                else if (DateTime.Now.Hour < 13)
+                {
+                    strWord += "都去吃饭了喵？";
+                }
+                else if (DateTime.Now.Hour < 18)
+                {
+                    strWord += "还在工作呢喵？";
+                }
+                else if (DateTime.Now.Hour < 22)
+                {
+                    strWord += "都跑哪里去了喵？";
+                }
+                else
+                {
+                    strWord += "都睡着了喵？";
+                }
+
+                strWord += "已经两个小时没人理我了";
+
+                string strValue = TemplateBuilder.BuildSendMessage(group.group_id, "[CQ:image,file=" + strPathImage + "]" + strWord, false);
                 await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strValue)), WebSocketMessageType.Text, true, cancelState);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Warning");
             }
-
         }
     }
 }

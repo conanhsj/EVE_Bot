@@ -147,7 +147,9 @@ namespace EVE_Bot.EVEAPIs
 
             }
 
-            strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000049/type/{0}.json", item);
+            //羊头狗肉
+            //strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000049/type/{0}.json", item);
+            strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000050/type/{0}.json", item);
             request = (HttpWebRequest)WebRequest.Create(strReqPath);
             request.Method = "GET";
 
@@ -163,5 +165,40 @@ namespace EVE_Bot.EVEAPIs
             }
             return dicResult;
         }
+
+        public static Wormhole ReadWikiWormhole(string HoleID)
+        {
+            Wormhole wh = new Wormhole();
+            //请求
+            string strReqPath = string.Format("http://eve.huijiwiki.com/wiki/{0}", HoleID);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(strReqPath);
+            request.Method = "GET";
+
+            using (WebResponse response = request.GetResponse())
+            {
+                Stream stream = response.GetResponseStream();
+                StreamReader sr = new StreamReader(stream);
+                //JsonTextReader jsonReader = new JsonTextReader(sr);
+                string strJson = sr.ReadToEnd();
+                strJson = WebUtility.HtmlDecode(strJson);
+                //strJson = strJson.Trim('[', ']');
+                //XmlDocument xmlDoc = JsonConvert.DeserializeXmlNode(strJson);
+                HtmlAgilityPack.HtmlDocument xmlDoc = new HtmlAgilityPack.HtmlDocument();
+
+                xmlDoc.LoadHtml(strJson);
+                List<HtmlAgilityPack.HtmlNode> lstNode = xmlDoc.DocumentNode.SelectNodes("//div//table").ToList();
+                List<HtmlAgilityPack.HtmlNode> lsttd = lstNode[0].SelectNodes("//td").ToList();
+
+                wh.Code = lstNode[0].SelectSingleNode("//th").GetDirectInnerText();
+                wh.Come = lsttd[0].InnerText.Trim('\n');
+                wh.To = lsttd[1].InnerText.Trim('\n');
+                wh.Keep = lsttd[2].InnerText.Trim('\n');
+                wh.Pass = lsttd[3].InnerText.Trim('\n');
+                wh.Max = lsttd[4].InnerText.Trim('\n');
+            }
+
+            return wh;
+        }
+
     }
 }

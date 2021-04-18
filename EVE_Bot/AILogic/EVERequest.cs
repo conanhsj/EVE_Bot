@@ -19,6 +19,9 @@ namespace EVE_Bot.AILogic
     {
         private static List<BluePrint> lstBluePrint = JsonConvert.DeserializeObject<List<BluePrint>>(FilesHelper.ReadJsonFile("BluePrint"));
         private static List<Item> lstItem = JsonConvert.DeserializeObject<List<Item>>(FilesHelper.ReadJsonFile("ItemID"));
+        private static List<Recycle> lstRecycle = JsonConvert.DeserializeObject<List<Recycle>>(FilesHelper.ReadJsonFile("Materials"));
+        private static List<WormholeSystem> lstWormholeSystem = JsonConvert.DeserializeObject<List<WormholeSystem>>(FilesHelper.ReadJsonFile("Wormhole"));
+        private static List<Wormhole> lstWormhole = JsonConvert.DeserializeObject<List<Wormhole>>(FilesHelper.ReadJsonFile("Hole"));
 
         private static CancellationToken cancelState = new CancellationToken();
 
@@ -38,10 +41,192 @@ namespace EVE_Bot.AILogic
             {
                 strMessage = SearchRange(strMessage, strRequest);
             }
+            else if (strRequest.StartsWith("查询材料"))
+            {
+                strMessage = SearchMaterial(strMessage, strRequest);
+            }
+            else if (strRequest.StartsWith("查询提炼"))
+            {
+                strMessage = SearchRecycle(strMessage, strRequest);
+            }
+            else if (strRequest.StartsWith("查询虫洞"))
+            {
+                strMessage = SearchWormhole(strMessage, strRequest);
+            }
+            else if (strRequest.StartsWith("查询洞口"))
+            {
+                strMessage = SearchHole(strMessage, strRequest);
+            }
             else
             {
-                strMessage += "这边没有您需要的服务，请回吧";
+                strMessage += "您输入的命令可能写错了\n";
+                strMessage += "可用命令：\n";
+                strMessage += "!查询蓝图 查询详细制造消耗\n";
+                strMessage += "!查询价格 查询具体名称或吉他皮米价格\n";
+                strMessage += "!查询广域 查询具体物品的多星域价格\n";
+                strMessage += "!查询材料 查询物品的使用用途\n";
+                strMessage += "!查询虫洞 查询对应编号的虫洞信息\n";
+                strMessage += "!查询洞口 查询对应编号的洞口信息\n";
+                strMessage += "!查询提炼 查询化矿或碎铁产物";
             }
+            return strMessage;
+        }
+
+        private static string SearchRecycle(string strMessage, string strRequest)
+        {
+            string strKeyWord = string.Empty;
+            //去掉最前边的"查询提炼"字眼
+            strRequest = strRequest.Substring(4).Trim();
+            int nIndex = strRequest.IndexOf("%");
+            double dMaterRate = 1;
+            if (nIndex > 0)
+            {
+                try
+                {
+                    string strRate = strRequest.Substring(strRequest.IndexOf(" ", nIndex - 5), nIndex - strRequest.IndexOf(" ", nIndex - 5)).Trim();
+                    dMaterRate = Commons.ReadDouble(strRate) / 100;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("这材料效率写错了吧！？");
+                }
+                strKeyWord = strRequest.Substring(0, strRequest.IndexOf(" ", strRequest.IndexOf(" ", nIndex - 5))).Trim();
+            }
+            else
+            {
+                strKeyWord = strRequest;
+            }
+
+            //查找和计算
+            List<Recycle> recItem = lstRecycle.FindAll(Item => Item.Name == strKeyWord);
+
+            //二次筛选
+            if (recItem.Count != 1)
+            {
+                strMessage += "本功能仅支持单商品查询，请通过查询价格或蓝图确认物品名称";
+                return strMessage;
+            }
+
+
+            //价格查询
+            List<string> lstSearch = new List<string>();
+            lstSearch.Add(recItem[0].TypeID.ToString());
+            foreach (RecycleMtls Mtls in recItem[0].Materials)
+            {
+                lstSearch.Add(Mtls.TypeID.ToString());
+            }
+
+            Dictionary<string, Price> dicResult = CEVEMarket.SearchPriceJson(lstSearch);
+
+            string strMaterRate = dMaterRate.ToString("00.0%");
+
+            strMessage += "在 " + strMaterRate + " 转化率下提炼 " + recItem[0].Name + " 可得到以下材料：\n";
+
+            double dBuy = 0;
+            double dSell = 0;
+            foreach (RecycleMtls Mtls in recItem[0].Materials)
+            {
+
+                double dQty = Math.Floor(Mtls.Quantity * dMaterRate);
+
+                if (dQty == 0)
+                {
+                    strMessage += "  " + Mtls.Name + "被损耗吃掉啦";
+                    continue;
+                }
+
+                //收购价格
+                double dMtlsBuy = dicResult[Mtls.TypeID.ToString()].buy.max * Math.Ceiling(dQty);
+                string strBuyISK = string.Empty;
+                if (dMtlsBuy == 0)
+                {
+                    strBuyISK = "这个没人收";
+                }
+                else
+                {
+                    dBuy += dMtlsBuy;
+                    strBuyISK = Commons.FormatISK(dMtlsBuy.ToString("0.00")) + "[" + dicResult[Mtls.TypeID.ToString()].buy.place + "]";
+                }
+                //卖单价格
+                double dMtlsSell = dicResult[Mtls.TypeID.ToString()].sell.min * Math.Ceiling(dQty);
+                string strSellISK = string.Empty;
+                if (dMtlsSell == 0)
+                {
+                    strSellISK = "这个没人卖";
+                }
+                else
+                {
+                    dSell += dMtlsSell;
+                    strSellISK = Commons.FormatISK(dMtlsSell.ToString("0.00")) + "[" + dicResult[Mtls.TypeID.ToString()].sell.place + "]";
+                }
+                strMessage += "  " + Mtls.Name + "：" + dQty.ToString("0") + "个,挂单出约： " + strSellISK + ",卖收单约： " + strBuyISK + "\n";
+            }
+            strMessage += "=====================总计=====================\n";
+            string strItemSell = string.Empty;
+            if (dicResult[recItem[0].TypeID.ToString()].sell.min == 0)
+            {
+                strItemSell = "这个没人卖";
+            }
+            else
+            {
+                strItemSell = Commons.FormatISK(dicResult[recItem[0].TypeID.ToString()].sell.min.ToString("0.00")) + "[" + dicResult[recItem[0].TypeID.ToString()].sell.place + "]";
+            }
+
+            string strItemBuy = string.Empty;
+            if (dicResult[recItem[0].TypeID.ToString()].buy.max == 0)
+            {
+                strItemBuy = "这个没人收";
+            }
+            else
+            {
+                strItemBuy = Commons.FormatISK(dicResult[recItem[0].TypeID.ToString()].buy.max.ToString("0.00")) + "[" + dicResult[recItem[0].TypeID.ToString()].buy.place + "]";
+            }
+            strMessage += recItem[0].Name + "卖单：" + strItemSell + " 收单：" + strItemBuy + " \n";
+            strMessage += "  提炼后挂单出售：" + Commons.FormatISK(dSell.ToString("0.00")) + " 提炼后直接出售：" + Commons.FormatISK(dBuy.ToString("0.00")) + "\n";
+            return strMessage;
+        }
+
+        private static string SearchMaterial(string strMessage, string strRequest)
+        {
+            string strKeyWord = string.Empty;
+            //去掉最前边的"查询蓝图"字眼
+            strRequest = strRequest.Substring(4).Trim();
+            List<Item> lstSearch = lstItem.FindAll(Item => Item.Name == strRequest);
+            //二次筛选
+            if (lstSearch.Count != 1)
+            {
+                strMessage += "本功能仅支持单商品查询，请通过查询价格或蓝图确认物品名称";
+                return strMessage;
+            }
+            //提取ID列表
+            List<string> lstTypeID = lstSearch.Select(obj => { return obj.TypeID; }).ToList();
+
+            if (lstTypeID.Count == 0)
+            {
+                strMessage += "没找到物品ID";
+            }
+            else if (lstTypeID.Count == 1)
+            {
+                //查找和计算
+                List<BluePrint> bluePrint = lstBluePrint.FindAll(Item => Item.Materials.FindAll(Mater => Mater.TypeID.ToString() == lstTypeID[0]).Count > 0);
+                strMessage += "共查询到" + bluePrint.Count + "种消耗方式\n";
+                if (bluePrint.Count > 30)
+                {
+                    strMessage += "由于数量太多，所以仅显示前30种\n";
+                    for (int n = 0; n < 30; n++)
+                    {
+                        strMessage += bluePrint[n].ProductName + "\n";
+                    }
+                }
+                else
+                {
+                    foreach (BluePrint bp in bluePrint)
+                    {
+                        strMessage += bp.ProductName + "\n";
+                    }
+                }
+            }
+
             return strMessage;
         }
 
@@ -50,10 +235,6 @@ namespace EVE_Bot.AILogic
             string strKeyWord = string.Empty;
             //去掉最前边的"查询价格"字眼
             strKeyWord = strRequest.Substring(4).Trim();
-            if (strKeyWord.Length < 3)
-            {
-                throw new Exception("太短了，下次再长点。");
-            }
             List<Item> lstSearch = lstItem.FindAll(Item => Item.Name == strKeyWord);
 
             //二次筛选
@@ -73,8 +254,6 @@ namespace EVE_Bot.AILogic
             {
                 //查询价格
                 Dictionary<string, Price> dicResult = CEVEMarket.SearchPriceRegion(lstTypeID[0]);
-
-
 
                 strMessage += strKeyWord + "在以下星域的价格为：\n";
                 foreach (string strKey in dicResult.Keys)
@@ -98,7 +277,7 @@ namespace EVE_Bot.AILogic
             string strKeyWord = string.Empty;
             //去掉最前边的"查询价格"字眼
             strKeyWord = strRequest.Substring(4).Trim();
-            if (strKeyWord.Length < 3)
+            if (strKeyWord.Length < 2)
             {
                 throw new Exception("太短了，下次再长点。");
             }
@@ -184,7 +363,7 @@ namespace EVE_Bot.AILogic
             {
                 strKeyWord = strRequest;
             }
-            if (strKeyWord.Length < 3)
+            if (strKeyWord.Length < 2)
             {
                 throw new Exception("太短了，下次再长点。");
             }
@@ -205,6 +384,9 @@ namespace EVE_Bot.AILogic
                 {
                     lstSearch.Add(Mtls.TypeID.ToString());
                 }
+
+                int nMaxLength = bluePrint.Materials.Max(obj => { return obj.Name.Length; });
+
                 Dictionary<string, Price> dicResult = CEVEMarket.SearchPriceJson(lstSearch);
 
                 strMessage += "生产 " + bluePrint.ProductQty + " 个 " + bluePrint.ProductName + " 需要以下材料：\n";
@@ -240,7 +422,7 @@ namespace EVE_Bot.AILogic
                         dSell += dMtlsSell;
                         strSellISK = Commons.FormatISK(dMtlsSell.ToString("0.00")) + "[" + dicResult[Mtls.TypeID.ToString()].sell.place + "]";
                     }
-                    strMessage += "  " + Mtls.Name + "： " + dQty.ToString("0.0") + "个,买： " + strSellISK + ",收： " + strBuyISK + "\n";
+                    strMessage += "  " + Mtls.Name.PadRight(nMaxLength, '　') + "： " + dQty.ToString("0.0") + "个,买： " + strSellISK + ",收： " + strBuyISK + "\n";
                 }
                 strMessage += "=====================总计=====================\n";
                 string strItemSell = string.Empty;
@@ -278,6 +460,80 @@ namespace EVE_Bot.AILogic
                     strMessage += bp.ProductName + "\n";
                 }
                 strMessage += "请使用 查询蓝图 名称 材料效率% 来叫我";
+            }
+            return strMessage;
+        }
+
+        private static string SearchWormhole(string strMessage, string strRequest)
+        {
+            string strKeyWord = string.Empty;
+            //去掉最前边的"查询蓝图"字眼
+            strRequest = strRequest.Substring(4).Trim();
+
+            List<WormholeSystem> lstResult = lstWormholeSystem.FindAll(wh => wh.Name.Contains(strRequest));
+            strMessage += "找到" + lstResult.Count + "个结果";
+            if (lstResult.Count > 0 && lstResult.Count < 20)
+            {
+                strMessage += "\n";
+                foreach (WormholeSystem WH in lstResult)
+                {
+                    strMessage += WH.Name + " 等级：" + WH.Class + " 天象：" + (WH.Effects == string.Empty ? "None" : WH.Effects) + " 永联：" + WH.Statics + "\n";
+                }
+                strMessage.Trim('\n');
+            }
+            return strMessage;
+        }
+
+        private static string SearchHole(string strMessage, string strRequest)
+        {
+            string strKeyWord = string.Empty;
+            //去掉最前边的"查询蓝图"字眼
+            strRequest = strRequest.Substring(4).Trim();
+            if (lstWormhole == null)
+            {
+                lstWormhole = new List<Wormhole>();
+            }
+
+            List<Wormhole> lstResult = lstWormhole.FindAll(wh => wh.Code == strRequest);
+
+            if (lstResult.Count > 0)
+            {
+                foreach (Wormhole WH in lstResult)
+                {
+                    strMessage += "洞口编号：" + WH.Code + "\n";
+                    strMessage += "出现于：" + WH.Come + "\n";
+                    strMessage += "联通至：" + WH.To + "\n";
+                    strMessage += "持续时间：" + WH.Keep + "\n";
+                    strMessage += "单次通过质量：" + WH.Pass + "\n";
+                    strMessage += "总共通过质量：" + WH.Max + "\n";
+                }
+                strMessage.Trim('\n');
+            }
+            else
+            {
+                if (strRequest.Length != 4)
+                {
+                    strMessage += "俺寻思你这编号写错了呐！";
+                    return strMessage;
+                }
+                try
+                {
+                    Wormhole WH = CEVEMarket.ReadWikiWormhole(strRequest);
+                    strMessage += "洞口编号：" + WH.Code + "\n";
+                    strMessage += "出现于：" + WH.Come + "\n";
+                    strMessage += "联通至：" + WH.To + "\n";
+                    strMessage += "持续时间：" + WH.Keep + "\n";
+                    strMessage += "单次通过质量：" + WH.Pass + "\n";
+                    strMessage += "总共通过质量：" + WH.Max;
+
+                    lstResult.Add(WH);
+                    FilesHelper.OutputJsonFile("Hole", JsonConvert.SerializeObject(lstResult, Formatting.Indented));
+                }
+                catch
+                {
+                    return "Wiki娘说她找不到！";
+                }
+
             }
             return strMessage;
         }
