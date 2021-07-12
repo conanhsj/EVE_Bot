@@ -14,10 +14,14 @@ namespace EVE_Bot.JsonSetting
         public long group_id;
         [JsonProperty]
         public int CoolDownTime;
+        [JsonProperty]
+        public bool SetuOpen = true;
         [JsonIgnore]
         public long last_time;
         [JsonIgnore]
         public string RepeatCheck;
+        [JsonIgnore]
+        public long last_setu_time;
 
     }
 }

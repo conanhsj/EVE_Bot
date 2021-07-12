@@ -54,7 +54,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(618, 349);
+            this.ClientSize = new System.Drawing.Size(556, 233);
             this.Controls.Add(this.rtbInput);
             this.Controls.Add(this.btnAnnounce);
             this.Name = "frmMain";

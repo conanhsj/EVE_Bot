@@ -1,4 +1,5 @@
-﻿using EVE_Bot.Helper;
+﻿using Bot.ExtendInterface;
+using EVE_Bot.Helper;
 using EVE_Bot.JsonObject;
 using EVE_Bot.JsonSetting;
 using Newtonsoft.Json;
@@ -16,20 +17,17 @@ namespace EVE_Bot.AILogic
     {
         public static List<JsonWords> lstWords = JsonConvert.DeserializeObject<List<JsonWords>>(FilesHelper.ReadJsonFile("Talking\\Words"));
         public static List<string> lstPronoun = new List<string>();
-
         public static List<string> lstMe = new List<string>() { "猫娘", "这猫", "机器人" };
         public static List<string> lstPrep = new List<string>() { "的", "是", "了" };
         public static List<string> lstAnswer = new List<string>() { "哦？这么", "是么？有多", "那还真是" };
-
 
         public static List<string> lstSelf = new List<string>();
         public static List<string> lstIs = new List<string>();
         public static List<string> lstHave = new List<string>();
         public static List<string> lstDid = new List<string>();
         public static List<string> lstBelong = new List<string>();
-
-
-
+        public static List<string> lstSearchTrigger = new List<string>() { "有没有人知道", "百度一下", "有没有谁知道" };
+        public static Dictionary<string, Dictionary<string, string>> dicTodayDick = new Dictionary<string, Dictionary<string, string>>();
         public static Regex regAdj = new Regex("太(\\w*?)了");
         public static Regex regCQCode = new Regex(@"(?:\[CQ:.*\])");
 
@@ -42,14 +40,11 @@ namespace EVE_Bot.AILogic
                 strInput = regCQCode.Replace(strInput, "");
             }
 
+            //触发几率
             bool bAnswer = true;
-            if (lstMe.Where(Callme => { return strInput.Contains(Callme); }).ToList().Count > 0)
+            if (lstMe.Where(Callme => { return strInput.StartsWith(Callme); }).ToList().Count > 0)
             {
-                //单纯叫名字
-                if (lstPrep.Where(Callme => { return strInput.Contains(Callme); }).ToList().Count <= 0)
-                {
-                    strMessage += "叫我吗？";
-                }
+                strMessage += "叫我吗？\n";
                 lstSelf.Add(strInput);
                 FilesHelper.OutputJsonFile("Talking\\Self", JsonConvert.SerializeObject(lstSelf, Formatting.Indented));
             }
@@ -57,31 +52,70 @@ namespace EVE_Bot.AILogic
             {
                 bAnswer = Commons.rnd.Next() % 100 < 10;
             }
+
+            List<JsonWords> lstParts = lstWords.FindAll(Words => Words.Type == "Adjs").Where(Keys => { return strInput.ToUpper().Contains(Keys.Word); }).ToList();
+
             //常见语法1 
             if (regAdj.IsMatch(strInput))
             {
                 string strAdjs = regAdj.Match(strInput).Value;
                 strAdjs = strAdjs.Trim('太', '了');
+                if (strAdjs.Length == 0 || strAdjs.Length > 5)
+                {
+                    return "";
+                }
                 if (bAnswer)
                 {
                     strMessage += lstAnswer[Commons.rnd.Next() % lstAnswer.Count] + strAdjs;
                 }
                 GetNewWord(strAdjs);
             }
+            else if (jsonGrpMsg.sender.user_id == 691854365 && strInput.Contains("今日的丁丁长度是"))
+            {
+                int QQNumber = jsonGrpMsg.message.IndexOf("[CQ:at,qq=");
+                string strTar = jsonGrpMsg.message.Substring(QQNumber + 10);
+                string strDick = strInput.Substring(strInput.IndexOf("今日的丁丁长度是") + 8);
+
+                string strToday = DateTime.Now.ToString("yyyy-MM-dd");
+                if (dicTodayDick.ContainsKey(strToday))
+                {
+                    Dictionary<string, string> dicDick = dicTodayDick[strToday];
+                    if (!dicDick.ContainsKey(strTar))
+                    {
+                        dicDick.Add(strTar, strDick);
+                    }
+                    FilesHelper.OutputJsonFile("Talking\\Dick", JsonConvert.SerializeObject(dicTodayDick, Formatting.Indented));
+                }
+                else
+                {
+                    if (dicTodayDick.Keys.Count > 0)
+                    {
+                        List<string> lstKey = dicTodayDick.Keys.ToList();
+
+                        foreach (string strKey in lstKey)
+                        {
+                            dicTodayDick.Remove(strKey);
+                        }
+                    }
+                    Dictionary<string, string> dicDick = new Dictionary<string, string>();
+                    dicDick.Add(strTar, strDick);
+                    dicTodayDick.Add(strToday, dicDick);
+                    FilesHelper.OutputJsonFile("Talking\\Dick", JsonConvert.SerializeObject(dicTodayDick, Formatting.Indented));
+                }
+            }
             else if (strInput.Contains("是"))
             {
-
                 lstIs.Add(strInput);
                 FilesHelper.OutputJsonFile("Talking\\Is", JsonConvert.SerializeObject(lstIs, Formatting.Indented));
             }
-            else if (strInput.Contains("有没有"))
+            else if (lstSearchTrigger.Where(Keys => { return strInput.ToUpper().Contains(Keys); }).ToList().Count > 0)
             {
-                string strOther = strInput.Substring(strInput.IndexOf("有没有") + 3);
-
+                string strKey = lstSearchTrigger.Where(Keys => { return strInput.ToUpper().Contains(Keys); }).First();
+                string strOther = strInput.Substring(strInput.IndexOf(strKey) + strKey.Length);
                 if (bAnswer)
                 {
                     string strURL = @"https://www.baidu.com/s?wd=" + WebUtility.UrlEncode(strOther);
-                    strMessage += "没有，建议百度一下\n" + strURL;
+                    strMessage += "自己去百度找吧。\n" + strURL;
                 }
                 lstHave.Add(strInput);
                 FilesHelper.OutputJsonFile("Talking\\Have", JsonConvert.SerializeObject(lstHave, Formatting.Indented));
@@ -96,6 +130,21 @@ namespace EVE_Bot.AILogic
                 lstBelong.Add(strInput);
                 FilesHelper.OutputJsonFile("Talking\\Belong", JsonConvert.SerializeObject(lstBelong, Formatting.Indented));
             }
+            else if (lstParts.Count > 0)
+            {
+                if (bAnswer)
+                {
+                    strMessage += "那也太" + lstParts[0].Word + "了";
+                }
+            }
+            else if (strInput.ToUpper().StartsWith(".JITA") || strInput.ToUpper().StartsWith("JITA"))
+            {
+                if (bAnswer)
+                {
+                    strMessage += "成天就知道jita，就不能问问我嘛！";
+                }
+            }
+
             return strMessage;
         }
 

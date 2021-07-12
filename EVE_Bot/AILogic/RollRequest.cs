@@ -1,5 +1,4 @@
-﻿using EVE_Bot.Interface;
-using EVE_Bot.JsonGame;
+﻿using EVE_Bot.JsonGame;
 using EVE_Bot.JsonObject;
 using System;
 using System.ComponentModel.Composition;
@@ -9,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using EVE_Bot.Helper;
 using Newtonsoft.Json;
+using Bot.ExtendInterface;
 
 namespace EVE_Bot.AILogic
 {
@@ -21,13 +21,14 @@ namespace EVE_Bot.AILogic
         string IMessageRequest.DealGroupRequest(JORecvGroupMsg jsonGrpMsg)
         {
             string strValue = string.Empty;
-            string strMessage = jsonGrpMsg.message;
+            string strMessage = jsonGrpMsg.message.ToUpper();
+            string strDisplayName = string.IsNullOrEmpty(jsonGrpMsg.sender.card) ? jsonGrpMsg.sender.nickname : jsonGrpMsg.sender.card;
 
-            if (strMessage.StartsWith("Roll"))
+            if (strMessage.StartsWith("ROLL"))
             {
                 strMessage = strMessage.Substring(4).Trim();
                 string[] Args = strMessage.Split(' ');
-                if (Args.Length > 0)
+                if (Args.Length > 0 && !string.IsNullOrEmpty(strMessage))
                 {
                     string strRange = Args[0];
                     string strReason = strMessage.Substring(Args[0].Length).Trim();
@@ -40,17 +41,24 @@ namespace EVE_Bot.AILogic
 
                         if (int.TryParse(strDice[0], out nDice) && int.TryParse(strDice[1], out nRange))
                         {
-                            strValue += jsonGrpMsg.sender.card + "的骰子结果为：";
-                            int nSum = 0;
-                            for (int n = 0; n < nDice; n++)
+                            if (nDice <= 1000 && nRange <= 1000)
                             {
-                                int nResult = (rnd.Next(nRange) + 1);
-                                strValue += nResult + "+";
-                                nSum += nResult;
+                                strValue += strDisplayName + "的骰子结果为：";
+                                int nSum = 0;
+                                for (int n = 0; n < nDice; n++)
+                                {
+                                    int nResult = (rnd.Next(nRange) + 1);
+                                    strValue += nResult + "+";
+                                    nSum += nResult;
+                                }
+                                if (nSum > 0)
+                                {
+                                    strValue = strValue.Trim('+') + " = " + nSum;
+                                }
                             }
-                            if (nSum > 0)
+                            else
                             {
-                                strValue = strValue.Trim('+') + " = " + nSum;
+                                strValue += strDisplayName + "你莫非是在消遣洒家";
                             }
                         }
                         else
@@ -63,7 +71,7 @@ namespace EVE_Bot.AILogic
                         int nRange = 0;
                         if (int.TryParse(Args[0], out nRange))
                         {
-                            strValue += jsonGrpMsg.sender.card + "的骰子结果为：" + (rnd.Next(nRange) + 1);
+                            strValue += strDisplayName + "的骰子结果为：" + (rnd.Next(nRange) + 1);
                         }
                         else
                         {
@@ -77,7 +85,7 @@ namespace EVE_Bot.AILogic
                 }
                 else
                 {
-                    strValue += jsonGrpMsg.sender.card + "的骰子结果为：" + (rnd.Next(6) + 1);
+                    strValue += strDisplayName + "的骰子结果为：" + (rnd.Next(6) + 1);
                 }
             }
 

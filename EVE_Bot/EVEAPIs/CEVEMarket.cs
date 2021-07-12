@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using EVE_Bot.JsonEVE;
 using Newtonsoft.Json;
 
@@ -32,7 +33,7 @@ namespace EVE_Bot.EVEAPIs
                         lstPriceCache.Remove(Cached);
                         Cached = null;
                     }
-        
+
                 }
                 //请求
                 string strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/{0}.json", Item);
@@ -45,9 +46,9 @@ namespace EVE_Bot.EVEAPIs
                     StreamReader sr = new StreamReader(stream);
                     string strJson = sr.ReadToEnd();
                     Price result = JsonConvert.DeserializeObject<Price>(strJson);
-            
+
                     Cached = result;
-                   
+
                 }
 
                 strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000002/system/30000144/type/{0}.json", Item);
@@ -85,7 +86,7 @@ namespace EVE_Bot.EVEAPIs
         public static Dictionary<string, Price> SearchPriceRegion(string item)
         {
             Dictionary<string, Price> dicResult = new Dictionary<string, Price>();
-            
+
             //请求
             string strReqPath = string.Format("https://www.ceve-market.org/api/market/region/10000002/type/{0}.json", item);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(strReqPath);
@@ -199,6 +200,125 @@ namespace EVE_Bot.EVEAPIs
 
             return wh;
         }
+
+        public static List<long> SearchNameToId(string strName)
+        {
+            SearchResult SearchIDResult = new SearchResult();
+
+            //请求
+            string strReqPath = string.Format("https://esi.evepc.163.com/latest/universe/ids/?datasource=serenity&language=zh");
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(strReqPath);
+            request.Method = "POST";
+
+            request.KeepAlive = false;
+            request.ContentType = "application/x-www-form-urlencoded;charset=utf-8";
+            byte[] postData = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new List<string>() { strName }));   //使用utf-8格式组装post参数
+            Stream reqStream = request.GetRequestStream();
+            reqStream.Write(postData, 0, postData.Length);
+
+            using (WebResponse response = request.GetResponse())
+            {
+
+                Stream stream = response.GetResponseStream();
+                StreamReader sr = new StreamReader(stream);
+                string strJson = sr.ReadToEnd();
+                SearchIDResult = JsonConvert.DeserializeObject<SearchResult>(strJson);
+            }
+
+            return SearchIDResult.characters.Select(Value => Value.id).ToList();
+        }
+
+        public static List<long> SearchCharacter(string strUserName)
+        {
+            SearchResult SearchIDResult = new SearchResult();
+            Random random = new Random();
+
+            //请求
+            string strReqPath = string.Format("https://esi.evepc.163.com/latest/search/?categories=character&datasource=serenity&language=zh&search={0}&strict=false", strUserName);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(strReqPath);
+            request.Method = "GET";
+
+            using (WebResponse response = request.GetResponse())
+            {
+                Stream stream = response.GetResponseStream();
+                StreamReader sr = new StreamReader(stream);
+                //JsonTextReader jsonReader = new JsonTextReader(sr);
+                string strJson = sr.ReadToEnd();
+                SearchIDResult = JsonConvert.DeserializeObject<SearchResult>(strJson);
+            }
+
+            return SearchIDResult.character;
+        }
+        public static List<Character> SearchCharacterData(List<long> lstSearchValue)
+        {
+            HttpWebRequest request = null;
+            List<Character> lstCharacter = new List<Character>();
+
+            if (lstSearchValue.Count > 0)
+            {
+                foreach (long charaID in lstSearchValue)
+                {
+                    //请求
+                    string strCharacterRequest = string.Format("https://esi.evepc.163.com/latest/characters/{0}/?datasource=serenity", charaID);
+                    request = (HttpWebRequest)WebRequest.Create(strCharacterRequest);
+                    request.Method = "GET";
+
+                    using (WebResponse response = request.GetResponse())
+                    {
+
+                        Stream stream = response.GetResponseStream();
+                        StreamReader sr = new StreamReader(stream);
+                        string strJson = sr.ReadToEnd();
+                        Character chara = JsonConvert.DeserializeObject<Character>(strJson);
+                        chara.character_id = charaID;
+                        lstCharacter.Add(chara);
+                    }
+                }
+
+                foreach (Character IDResult in lstCharacter)
+                {
+                    //请求
+                    string strCharacterRequest = string.Format("https://esi.evepc.163.com/latest/corporations/{0}/?datasource=serenity", IDResult.corporation_id);
+                    request = (HttpWebRequest)WebRequest.Create(strCharacterRequest);
+                    request.Method = "GET";
+
+                    using (WebResponse response = request.GetResponse())
+                    {
+
+                        Stream stream = response.GetResponseStream();
+                        StreamReader sr = new StreamReader(stream);
+                        string strJson = sr.ReadToEnd();
+                        Corporation corp = JsonConvert.DeserializeObject<Corporation>(strJson);
+                        IDResult.corporation_name = corp.name + "[" + corp.ticker + "]";
+                    }
+                }
+
+                foreach (Character IDResult in lstCharacter)
+                {
+                    if (IDResult.alliance_id == 0)
+                    {
+                        continue;
+                    }
+                    //请求
+                    string strCharacterRequest = string.Format("https://esi.evepc.163.com/latest/alliances/{0}/?datasource=serenity", IDResult.alliance_id);
+                    request = (HttpWebRequest)WebRequest.Create(strCharacterRequest);
+                    request.Method = "GET";
+
+                    using (WebResponse response = request.GetResponse())
+                    {
+
+                        Stream stream = response.GetResponseStream();
+                        StreamReader sr = new StreamReader(stream);
+                        string strJson = sr.ReadToEnd();
+                        Alliances alli = JsonConvert.DeserializeObject<Alliances>(strJson);
+                        IDResult.alliance_name = alli.name + "[" + alli.ticker + "]";
+                    }
+                }
+
+            }
+            return lstCharacter;
+        }
+
 
     }
 }

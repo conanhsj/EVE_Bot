@@ -32,11 +32,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HtmlAgilityPack, Version=1.11.32.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
-      <HintPath>..\packages\HtmlAgilityPack.1.11.32\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    <Reference Include="HtmlAgilityPack, Version=1.11.34.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>..\packages\HtmlAgilityPack.1.11.34\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -57,10 +57,11 @@
     <Compile Include="AILogic\MoodRequest.cs" />
     <Compile Include="AILogic\EVERequest.cs" />
     <Compile Include="AILogic\RollRequest.cs" />
-    <Compile Include="AILogic\UraraRequest.cs" />
     <Compile Include="AILogic\WolfRequest.cs" />
     <Compile Include="Commons.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="EVEAPIs\CEVEMarket.cs" />
+    <Compile Include="EVEAPIs\CEVESwaggerInterface.cs" />
     <Compile Include="frmMain.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -69,8 +70,11 @@
     </Compile>
     <Compile Include="Helper\FilesHelper.cs" />
     <Compile Include="Helper\TemplateBuilder.cs" />
-    <Compile Include="Interface\IMessageRequest.cs" />
+    <Compile Include="JsonEVE\Alliances.cs" />
     <Compile Include="JsonEVE\BluePrint.cs" />
+    <Compile Include="JsonEVE\Character.cs" />
+    <Compile Include="JsonEVE\Corporation.cs" />
+    <Compile Include="JsonEVE\KeyPair.cs" />
     <Compile Include="JsonEVE\RecycleMtls.cs" />
     <Compile Include="JsonEVE\BluePrintMtls.cs" />
     <Compile Include="JsonEVE\ESIAccessKey.cs" />
@@ -78,17 +82,17 @@
     <Compile Include="JsonEVE\Price.cs" />
     <Compile Include="JsonEVE\PriceInfo.cs" />
     <Compile Include="JsonEVE\Recycle.cs" />
+    <Compile Include="JsonEVE\SearchResult.cs" />
+    <Compile Include="JsonEVE\Sovereignty.cs" />
     <Compile Include="JsonEVE\Wormhole.cs" />
     <Compile Include="JsonEVE\WormholeSystem.cs" />
-    <Compile Include="JsonGame\Urara.cs" />
     <Compile Include="JsonGame\WolfChara.cs" />
     <Compile Include="JsonObject\JOAPI.cs" />
     <Compile Include="JsonObject\JOData.cs" />
     <Compile Include="JsonObject\JOGroupMessage.cs" />
     <Compile Include="JsonObject\JOParams.cs" />
-    <Compile Include="JsonObject\JORecvGroupMsg.cs" />
-    <Compile Include="JsonObject\JOSender.cs" />
     <Compile Include="JsonSetting\JsonGroup.cs" />
+    <Compile Include="JsonSetting\JsonSchedule.cs" />
     <Compile Include="JsonSetting\JsonWords.cs" />
     <Compile Include="JsonSetu\JOData.cs" />
     <Compile Include="JsonSetu\JOResponse.cs" />
@@ -106,27 +110,32 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="Lib\BluePrint.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Lib\ESISetting.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Lib\GroupSetting.json">
+    <None Include="Lib\EVE\BluePrint.json" />
+    <None Include="Lib\EVE\Hole.json" />
+    <None Include="Lib\EVE\ItemID.json" />
+    <None Include="Lib\EVE\Materials.json" />
+    <None Include="Lib\EVE\Wormhole.json" />
+    <None Include="Lib\Game\Wolf.json" />
+    <None Include="Lib\Talking\Adjs.json" />
+    <None Include="Lib\Talking\Belong.json" />
+    <None Include="Lib\Talking\Did.json" />
+    <None Include="Lib\Talking\Have.json" />
+    <None Include="Lib\Talking\Is.json" />
+    <None Include="Lib\Talking\Self.json" />
+    <None Include="Lib\Talking\Words.json" />
+    <None Include="Lib\Trigger\GroupSetting.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Lib\WarningWord.json">
+    <None Include="Lib\Trigger\WarningWord.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Lib\DirtyWord.json">
+    <None Include="Lib\Trigger\DirtyWord.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Lib\ItemID.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Lib\Wormhole.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <None Include="Lib\Urara\Result.json" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -141,6 +150,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Bot.ExtendInterface\Bot.ExtendInterface.csproj">
+      <Project>{474fd810-b4ff-48f0-ac24-fc2918b6c26d}</Project>
+      <Name>Bot.ExtendInterface</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

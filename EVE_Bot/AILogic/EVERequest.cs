@@ -1,4 +1,5 @@
-﻿using EVE_Bot.EVEAPIs;
+﻿using Bot.ExtendInterface;
+using EVE_Bot.EVEAPIs;
 using EVE_Bot.Helper;
 using EVE_Bot.JsonEVE;
 using EVE_Bot.JsonObject;
@@ -17,57 +18,61 @@ namespace EVE_Bot.AILogic
 {
     public static class EVERequest
     {
-        private static List<BluePrint> lstBluePrint = JsonConvert.DeserializeObject<List<BluePrint>>(FilesHelper.ReadJsonFile("BluePrint"));
-        private static List<Item> lstItem = JsonConvert.DeserializeObject<List<Item>>(FilesHelper.ReadJsonFile("ItemID"));
-        private static List<Recycle> lstRecycle = JsonConvert.DeserializeObject<List<Recycle>>(FilesHelper.ReadJsonFile("Materials"));
-        private static List<WormholeSystem> lstWormholeSystem = JsonConvert.DeserializeObject<List<WormholeSystem>>(FilesHelper.ReadJsonFile("Wormhole"));
-        private static List<Wormhole> lstWormhole = JsonConvert.DeserializeObject<List<Wormhole>>(FilesHelper.ReadJsonFile("Hole"));
-
-        private static CancellationToken cancelState = new CancellationToken();
+        private static List<BluePrint> lstBluePrint = JsonConvert.DeserializeObject<List<BluePrint>>(FilesHelper.ReadJsonFile(@"EVE\BluePrint"));
+        private static List<Item> lstItem = JsonConvert.DeserializeObject<List<Item>>(FilesHelper.ReadJsonFile(@"EVE\ItemID"));
+        private static List<Recycle> lstRecycle = JsonConvert.DeserializeObject<List<Recycle>>(FilesHelper.ReadJsonFile(@"EVE\Materials"));
+        private static List<WormholeSystem> lstWormholeSystem = JsonConvert.DeserializeObject<List<WormholeSystem>>(FilesHelper.ReadJsonFile(@"EVE\Wormhole"));
+        private static List<Wormhole> lstWormhole = JsonConvert.DeserializeObject<List<Wormhole>>(FilesHelper.ReadJsonFile(@"EVE\Hole"));
 
         public static string DealSearchRequest(ClientWebSocket ws, JORecvGroupMsg jsonGrpMsg)
         {
             string strMessage = string.Empty;//"[CQ:at,qq=" + jsonGrpMsg.user_id + "]";
             string strRequest = jsonGrpMsg.message.Trim('!', '！', ' ');
-            if (strRequest.StartsWith("查询蓝图"))
+            if (strRequest.StartsWith("蓝图"))
             {
                 strMessage = SearchBluePrint(strMessage, strRequest);
             }
-            else if (strRequest.StartsWith("查询价格"))
+            else if (strRequest.StartsWith("价格"))
             {
                 strMessage = SearchPrice(strMessage, strRequest);
             }
-            else if (strRequest.StartsWith("查询广域"))
+            else if (strRequest.StartsWith("广域"))
             {
                 strMessage = SearchRange(strMessage, strRequest);
             }
-            else if (strRequest.StartsWith("查询材料"))
+            else if (strRequest.StartsWith("材料"))
             {
                 strMessage = SearchMaterial(strMessage, strRequest);
             }
-            else if (strRequest.StartsWith("查询提炼"))
+            else if (strRequest.StartsWith("提炼"))
             {
                 strMessage = SearchRecycle(strMessage, strRequest);
             }
-            else if (strRequest.StartsWith("查询虫洞"))
+            else if (strRequest.StartsWith("虫洞"))
             {
                 strMessage = SearchWormhole(strMessage, strRequest);
             }
-            else if (strRequest.StartsWith("查询洞口"))
+            else if (strRequest.StartsWith("洞口"))
             {
                 strMessage = SearchHole(strMessage, strRequest);
+            }
+            else if (strRequest.StartsWith("角色"))
+            {
+                strMessage = SearchCharacter(strMessage, strRequest);
             }
             else
             {
                 strMessage += "您输入的命令可能写错了\n";
                 strMessage += "可用命令：\n";
-                strMessage += "!查询蓝图 查询详细制造消耗\n";
-                strMessage += "!查询价格 查询具体名称或吉他皮米价格\n";
-                strMessage += "!查询广域 查询具体物品的多星域价格\n";
-                strMessage += "!查询材料 查询物品的使用用途\n";
-                strMessage += "!查询虫洞 查询对应编号的虫洞信息\n";
-                strMessage += "!查询洞口 查询对应编号的洞口信息\n";
-                strMessage += "!查询提炼 查询化矿或碎铁产物";
+                strMessage += "!蓝图 查询详细制造消耗\n";
+                strMessage += "!价格 查询具体名称或吉他皮米价格\n";
+                strMessage += "!广域 查询具体物品的多星域价格\n";
+                strMessage += "!材料 查询物品的使用用途\n";
+                strMessage += "!虫洞 查询对应编号的虫洞信息\n";
+                strMessage += "!洞口 查询对应编号的洞口信息\n";
+                strMessage += "!角色 查询人物的公开信息\n";
+                strMessage += "!星系 查询星系相关的各种内容（制作中）\n";
+                strMessage += "!提炼 查询化矿或碎铁产物";
             }
             return strMessage;
         }
@@ -76,7 +81,7 @@ namespace EVE_Bot.AILogic
         {
             string strKeyWord = string.Empty;
             //去掉最前边的"查询提炼"字眼
-            strRequest = strRequest.Substring(4).Trim();
+            strRequest = strRequest.Substring(2).Trim();
             int nIndex = strRequest.IndexOf("%");
             double dMaterRate = 1;
             if (nIndex > 0)
@@ -190,7 +195,7 @@ namespace EVE_Bot.AILogic
         {
             string strKeyWord = string.Empty;
             //去掉最前边的"查询蓝图"字眼
-            strRequest = strRequest.Substring(4).Trim();
+            strRequest = strRequest.Substring(2).Trim();
             List<Item> lstSearch = lstItem.FindAll(Item => Item.Name == strRequest);
             //二次筛选
             if (lstSearch.Count != 1)
@@ -234,7 +239,7 @@ namespace EVE_Bot.AILogic
         {
             string strKeyWord = string.Empty;
             //去掉最前边的"查询价格"字眼
-            strKeyWord = strRequest.Substring(4).Trim();
+            strKeyWord = strRequest.Substring(2).Trim();
             List<Item> lstSearch = lstItem.FindAll(Item => Item.Name == strKeyWord);
 
             //二次筛选
@@ -276,11 +281,7 @@ namespace EVE_Bot.AILogic
         {
             string strKeyWord = string.Empty;
             //去掉最前边的"查询价格"字眼
-            strKeyWord = strRequest.Substring(4).Trim();
-            if (strKeyWord.Length < 2)
-            {
-                throw new Exception("太短了，下次再长点。");
-            }
+            strKeyWord = strRequest.Substring(2).Trim();
 
             List<Item> lstSearch = lstItem.FindAll(Item => Item.Name.Contains(strKeyWord) && !Item.Name.Contains("蓝图"));
 
@@ -343,7 +344,7 @@ namespace EVE_Bot.AILogic
         {
             string strKeyWord = string.Empty;
             //去掉最前边的"查询蓝图"字眼
-            strRequest = strRequest.Substring(4).Trim();
+            strRequest = strRequest.Substring(2).Trim();
             int nIndex = strRequest.IndexOf("%");
             double dMaterRate = 0;
             if (nIndex > 0)
@@ -468,7 +469,7 @@ namespace EVE_Bot.AILogic
         {
             string strKeyWord = string.Empty;
             //去掉最前边的"查询蓝图"字眼
-            strRequest = strRequest.Substring(4).Trim();
+            strRequest = strRequest.Substring(2).Trim();
 
             List<WormholeSystem> lstResult = lstWormholeSystem.FindAll(wh => wh.Name.Contains(strRequest));
             strMessage += "找到" + lstResult.Count + "个结果";
@@ -488,7 +489,7 @@ namespace EVE_Bot.AILogic
         {
             string strKeyWord = string.Empty;
             //去掉最前边的"查询蓝图"字眼
-            strRequest = strRequest.Substring(4).Trim();
+            strRequest = strRequest.Substring(2).Trim().ToUpper();
             if (lstWormhole == null)
             {
                 lstWormhole = new List<Wormhole>();
@@ -506,6 +507,8 @@ namespace EVE_Bot.AILogic
                     strMessage += "持续时间：" + WH.Keep + "\n";
                     strMessage += "单次通过质量：" + WH.Pass + "\n";
                     strMessage += "总共通过质量：" + WH.Max + "\n";
+
+                    strMessage = FixHoleChange(strMessage, WH);
                 }
                 strMessage.Trim('\n');
             }
@@ -525,9 +528,9 @@ namespace EVE_Bot.AILogic
                     strMessage += "持续时间：" + WH.Keep + "\n";
                     strMessage += "单次通过质量：" + WH.Pass + "\n";
                     strMessage += "总共通过质量：" + WH.Max;
-
-                    lstResult.Add(WH);
-                    FilesHelper.OutputJsonFile("Hole", JsonConvert.SerializeObject(lstResult, Formatting.Indented));
+                    strMessage = FixHoleChange(strMessage, WH);
+                    lstWormhole.Add(WH);
+                    FilesHelper.OutputJsonFile(@"EVE\Hole", JsonConvert.SerializeObject(lstWormhole, Formatting.Indented));
                 }
                 catch
                 {
@@ -537,5 +540,104 @@ namespace EVE_Bot.AILogic
             }
             return strMessage;
         }
+
+        private static string SearchCharacter(string strMessage, string strRequest)
+        {
+            string strKeyWord = string.Empty;
+            //去掉最前边的"查询角色"字眼
+            strRequest = strRequest.Substring(2).Trim();
+
+            if (strRequest.Length < 3)
+            {
+                strRequest = "*" + strRequest + "*";
+                strMessage += "查询内容过短，以下显示查询\"" + strRequest + "\"的结果";
+            }
+
+            //查找和计算
+            List<long> lstResult = CEVEMarket.SearchCharacter(strRequest);
+
+            strMessage += "找到" + lstResult.Count + "个结果\n";
+            if (lstResult.Count > 20)
+            {
+                strMessage += "结果数量过多，改为精确查找\n";
+                lstResult = CEVEMarket.SearchNameToId(strRequest);
+            }
+
+            if (lstResult.Count > 0)
+            {
+                List<Character> lstCharacter = CEVEMarket.SearchCharacterData(lstResult);
+                foreach (Character chara in lstCharacter)
+                {
+                    strMessage += "角色名：" + chara.name + "\n";
+                    strMessage += "角色ID：" + chara.character_id + "\n";
+                    strMessage += "军团名称：" + chara.corporation_name + "\n";
+                    strMessage += "军团ID：" + chara.corporation_id + "\n";
+                    if (chara.alliance_id != 0)
+                    {
+                        strMessage += "联盟名称：" + chara.alliance_name + "\n";
+                        strMessage += "联盟ID：" + chara.alliance_id + "\n";
+                    }
+                    strMessage += "出生日期：" + chara.birthday.ToString("yyyy-MM-dd HH:mm") + "\n";
+                    int nDays = (int)(DateTime.Now - chara.birthday).TotalDays;
+                    strMessage += "年龄：" + nDays + "天\n";
+                    strMessage += "头像：[CQ:image,file=" + string.Format("https://image.evepc.163.com/Character/{0}_256.jpg", chara.character_id) + ",cache=1]\n";
+                    strMessage += "=====================================\n";
+                }
+                strMessage = strMessage.Trim('\n', '=');
+            }
+            else
+            {
+                strMessage += "没找到";
+            }
+            return strMessage;
+        }
+
+        private static string FixHoleChange(string strMessage, Wormhole WH)
+        {
+            bool bHasChanged = false;
+            if (WH.Pass.StartsWith("20,000,000kg"))
+            {
+                WH.Pass = WH.Pass.Replace("20,000,000kg", "62,000,000kg");
+                strMessage += "\n这个在2021年YC123.3的更新中改成62,000,000kg啦";
+                bHasChanged = true;
+            }
+            if (WH.Pass.StartsWith("300,000,000kg"))
+            {
+                WH.Pass = WH.Pass.Replace("300,000,000kg", "375,000,000kg");
+                strMessage += "\n这个在2021年YC123.3的更新中改成375,000,000kg啦";
+                bHasChanged = true;
+            }
+            if (WH.Pass.StartsWith("1,350,000,000kg"))
+            {
+                WH.Pass = WH.Pass.Replace("1,350,000,000kg", "2,000,000,000kg");
+                strMessage += "\n这个在2021年YC123.3的更新中改成2,000,000,000kg啦";
+                bHasChanged = true;
+            }
+            if (WH.Pass.StartsWith("1,800,000,000kg"))
+            {
+                WH.Pass = WH.Pass.Replace("1,800,000,000kg", "2,000,000,000kg");
+                strMessage += "\n这个在2021年YC123.3的更新中改成2,000,000,000kg啦";
+                bHasChanged = true;
+            }
+            if (bHasChanged)
+            {
+                FilesHelper.OutputJsonFile("Hole", JsonConvert.SerializeObject(lstWormhole, Formatting.Indented));
+            }
+            return strMessage;
+        }
+
+
+        private static string SearchUniverse(string strMessage, string strRequest)
+        {
+            string strKeyWord = string.Empty;
+            //去掉最前边的"查询XX"字眼
+            strKeyWord = strRequest.Substring(2).Trim();
+
+            List<Sovereignty> joSov = CEVESwaggerInterface.SovereigntyMap();
+            FilesHelper.OutputJsonFile("Sovereignty\\Map", JsonConvert.SerializeObject(joSov, Formatting.Indented));
+
+            return strMessage;
+        }
+
     }
 }
