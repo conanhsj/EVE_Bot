@@ -128,10 +128,10 @@ namespace Bot.CoCRequest.Json
                 EDU = EDU - 5;
                 dice = Constants.RollDices(3, 6);
                 CreateLog += "额外幸运的结果为：" + dice.Result;
-                if (dice.Point > LKY)
+                if (dice.Point * 5 > LKY)
                 {
                     CreateLog += "成功\n";
-                    LKY = dice.Point;
+                    LKY = dice.Point * 5;
                 }
                 else
                 {
