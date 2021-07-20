@@ -17,7 +17,7 @@ namespace EVE_Bot.AILogic
     {
         public static List<JsonWords> lstWords = JsonConvert.DeserializeObject<List<JsonWords>>(FilesHelper.ReadJsonFile("Talking\\Words"));
         public static List<string> lstPronoun = new List<string>();
-        public static List<string> lstMe = new List<string>() { "猫娘", "这猫", "机器人" };
+        public static List<string> lstMe = new List<string>() { "猫娘", "这猫", "AI" };
         public static List<string> lstPrep = new List<string>() { "的", "是", "了" };
         public static List<string> lstAnswer = new List<string>() { "哦？这么", "是么？有多", "那还真是" };
 
@@ -103,40 +103,40 @@ namespace EVE_Bot.AILogic
                     FilesHelper.OutputJsonFile("Talking\\Dick", JsonConvert.SerializeObject(dicTodayDick, Formatting.Indented));
                 }
             }
-            else if (strInput.Contains("是"))
-            {
-                lstIs.Add(strInput);
-                FilesHelper.OutputJsonFile("Talking\\Is", JsonConvert.SerializeObject(lstIs, Formatting.Indented));
-            }
-            else if (lstSearchTrigger.Where(Keys => { return strInput.ToUpper().Contains(Keys); }).ToList().Count > 0)
-            {
-                string strKey = lstSearchTrigger.Where(Keys => { return strInput.ToUpper().Contains(Keys); }).First();
-                string strOther = strInput.Substring(strInput.IndexOf(strKey) + strKey.Length);
-                if (bAnswer)
-                {
-                    string strURL = @"https://www.baidu.com/s?wd=" + WebUtility.UrlEncode(strOther);
-                    strMessage += "自己去百度找吧。\n" + strURL;
-                }
-                lstHave.Add(strInput);
-                FilesHelper.OutputJsonFile("Talking\\Have", JsonConvert.SerializeObject(lstHave, Formatting.Indented));
-            }
-            else if (strInput.Contains("了"))
-            {
-                lstDid.Add(strInput);
-                FilesHelper.OutputJsonFile("Talking\\Did", JsonConvert.SerializeObject(lstDid, Formatting.Indented));
-            }
-            else if (strInput.Contains("的"))
-            {
-                lstBelong.Add(strInput);
-                FilesHelper.OutputJsonFile("Talking\\Belong", JsonConvert.SerializeObject(lstBelong, Formatting.Indented));
-            }
-            else if (lstParts.Count > 0)
-            {
-                if (bAnswer)
-                {
-                    strMessage += "那也太" + lstParts[0].Word + "了";
-                }
-            }
+            //else if (strInput.Contains("是"))
+            //{
+            //    lstIs.Add(strInput);
+            //    FilesHelper.OutputJsonFile("Talking\\Is", JsonConvert.SerializeObject(lstIs, Formatting.Indented));
+            //}
+            //else if (lstSearchTrigger.Where(Keys => { return strInput.ToUpper().Contains(Keys); }).ToList().Count > 0)
+            //{
+            //    string strKey = lstSearchTrigger.Where(Keys => { return strInput.ToUpper().Contains(Keys); }).First();
+            //    string strOther = strInput.Substring(strInput.IndexOf(strKey) + strKey.Length);
+            //    if (bAnswer)
+            //    {
+            //        string strURL = @"https://www.baidu.com/s?wd=" + WebUtility.UrlEncode(strOther);
+            //        strMessage += "自己去百度找吧。\n" + strURL;
+            //    }
+            //    lstHave.Add(strInput);
+            //    FilesHelper.OutputJsonFile("Talking\\Have", JsonConvert.SerializeObject(lstHave, Formatting.Indented));
+            //}
+            //else if (strInput.Contains("了"))
+            //{
+            //    lstDid.Add(strInput);
+            //    FilesHelper.OutputJsonFile("Talking\\Did", JsonConvert.SerializeObject(lstDid, Formatting.Indented));
+            //}
+            //else if (strInput.Contains("的"))
+            //{
+            //    lstBelong.Add(strInput);
+            //    FilesHelper.OutputJsonFile("Talking\\Belong", JsonConvert.SerializeObject(lstBelong, Formatting.Indented));
+            //}
+            //else if (lstParts.Count > 0)
+            //{
+            //    if (bAnswer)
+            //    {
+            //        strMessage += "那也太" + lstParts[0].Word + "了";
+            //    }
+            //}
             else if (strInput.ToUpper().StartsWith(".JITA") || strInput.ToUpper().StartsWith("JITA"))
             {
                 if (bAnswer)

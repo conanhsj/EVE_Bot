@@ -23,6 +23,7 @@ namespace EVE_Bot.AILogic
         private static List<Recycle> lstRecycle = JsonConvert.DeserializeObject<List<Recycle>>(FilesHelper.ReadJsonFile(@"EVE\Materials"));
         private static List<WormholeSystem> lstWormholeSystem = JsonConvert.DeserializeObject<List<WormholeSystem>>(FilesHelper.ReadJsonFile(@"EVE\Wormhole"));
         private static List<Wormhole> lstWormhole = JsonConvert.DeserializeObject<List<Wormhole>>(FilesHelper.ReadJsonFile(@"EVE\Hole"));
+        private static List<Solar> lstSolar = JsonConvert.DeserializeObject<List<Solar>>(FilesHelper.ReadJsonFile(@"EVE\UniverseSystem"));
 
         public static string DealSearchRequest(ClientWebSocket ws, JORecvGroupMsg jsonGrpMsg)
         {
@@ -60,9 +61,12 @@ namespace EVE_Bot.AILogic
             {
                 strMessage = SearchCharacter(strMessage, strRequest);
             }
-            else
+            else if (strRequest.StartsWith("星系"))
             {
-                strMessage += "您输入的命令可能写错了\n";
+                strMessage = SearchSolar(strMessage, strRequest);
+            }
+            else if (strRequest.StartsWith("帮助"))
+            {
                 strMessage += "可用命令：\n";
                 strMessage += "!蓝图 查询详细制造消耗\n";
                 strMessage += "!价格 查询具体名称或吉他皮米价格\n";
@@ -73,6 +77,35 @@ namespace EVE_Bot.AILogic
                 strMessage += "!角色 查询人物的公开信息\n";
                 strMessage += "!星系 查询星系相关的各种内容（制作中）\n";
                 strMessage += "!提炼 查询化矿或碎铁产物";
+            }
+            else
+            {
+                strMessage += "[CQ:at,qq=" + jsonGrpMsg.sender.user_id + "]？有问题查帮助啊";
+            }
+            return strMessage;
+        }
+
+        private static string SearchSolar(string strMessage, string strRequest)
+        {
+            string strKeyWord = string.Empty;
+            //去掉最前边的"查询提炼"字眼
+            strRequest = strRequest.Substring(2).Trim();
+
+
+            List<Solar> lstResult = lstSolar.FindAll(solar => solar.system_name.Contains(strRequest));
+
+            if (lstResult.Count > 0)
+            {
+                strMessage += "找到" + lstResult.Count + "个结果\n";
+                foreach (Solar Solar in lstResult)
+                {
+                    strMessage += Solar.system_name + "(" + Solar.system_id + ") << " + Solar.constellation_name + "(" + Solar.constellation_id + ") << " + Solar.region_name + "(" + Solar.region_id + ")\n";
+                }
+                strMessage.Trim('\n');
+            }
+            else
+            {
+                strMessage += "没找到啊";
             }
             return strMessage;
         }
@@ -471,7 +504,7 @@ namespace EVE_Bot.AILogic
             //去掉最前边的"查询蓝图"字眼
             strRequest = strRequest.Substring(2).Trim();
 
-            List<WormholeSystem> lstResult = lstWormholeSystem.FindAll(wh => wh.Name.Contains(strRequest));
+            List<WormholeSystem> lstResult = lstWormholeSystem.FindAll(wh => wh.Name.Contains(strRequest.ToUpper()));
             strMessage += "找到" + lstResult.Count + "个结果";
             if (lstResult.Count > 0 && lstResult.Count < 20)
             {

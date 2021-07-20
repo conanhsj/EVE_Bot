@@ -11,5 +11,6 @@ namespace Bot.AIRequest
         public static string Path_Base = @"Talking";
         public static string Path_Words = @"\Lib\" + Path_Base + @"\Words.json";
         public static string Path_Dick = @"\Lib\" + Path_Base + @"\Dick.json";
+
     }
 }

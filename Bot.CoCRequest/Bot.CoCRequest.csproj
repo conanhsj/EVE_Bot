@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{11A05A68-5E9C-4E3A-BD0C-0DE1589652C6}</ProjectGuid>
+    <ProjectGuid>{F33CC1D6-7A8D-4D37-B424-730E1B618B5B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Bot.DerbyRequest</RootNamespace>
-    <AssemblyName>Bot.DerbyRequest</AssemblyName>
+    <RootNamespace>Bot.CoCRequest</RootNamespace>
+    <AssemblyName>Bot.CoCRequest</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -44,24 +44,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CoCRequest.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="DerbyRequest.cs" />
-    <Compile Include="JsonDerby\db.cs" />
-    <Compile Include="JsonDerby\Event.cs" />
-    <Compile Include="JsonDerby\Player.cs" />
-    <Compile Include="JsonDerby\Prize.cs" />
-    <Compile Include="JsonDerby\Race.cs" />
-    <Compile Include="JsonDerby\RaceListItem.cs" />
+    <Compile Include="Json\Character.cs" />
+    <Compile Include="Objects\DiceResult.cs" />
+    <Compile Include="Objects\RCResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Bot.ExtendInterface\Bot.ExtendInterface.csproj">
-      <Project>{474fd810-b4ff-48f0-ac24-fc2918b6c26d}</Project>
+      <Project>{474FD810-B4FF-48F0-AC24-FC2918B6C26D}</Project>
       <Name>Bot.ExtendInterface</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

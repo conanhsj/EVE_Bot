@@ -68,7 +68,7 @@ namespace EVE_Bot.EVEAPIs
                         Cached.sell = result.sell;
                         Cached.sell.place = "皮";
                     }
-                    if (Cached.buy.min == 0 || Cached.buy.max < result.buy.max)
+                    if (Cached.buy.max == 0 || Cached.buy.max < result.buy.max)
                     {
                         Cached.buy = result.buy;
                         Cached.buy.place = "皮";

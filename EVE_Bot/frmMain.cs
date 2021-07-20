@@ -44,7 +44,7 @@ namespace EVE_Bot
         //Q群冷却计时器
         private Dictionary<Int64, System.Timers.Timer> dicGroupRepeat = new Dictionary<long, System.Timers.Timer>();
         //模块化
-        private Dictionary<string, string> dicModuleConfig = new Dictionary<string, string>() { { "狼人杀", "WolfRequest" }, { "ROLL", "RollRequest" }, { "占卜", "UraraRequest" }, { "赛马娘", "DerbyRequest" } };
+        private Dictionary<string, string> dicModuleConfig = new Dictionary<string, string>() { { "狼人杀", "WolfRequest" }, { "ROLL", "RollRequest" }, { "占卜", "UraraRequest" }, { "赛马娘", "DerbyRequest" }, { "COC", "CoCRequest" } };
         //模块化
         private Dictionary<string, Lazy<IMessageRequest>> dicRequestModule = new Dictionary<string, Lazy<IMessageRequest>>();
         private Dictionary<string, IMessageRequest> dicModule = new Dictionary<string, IMessageRequest>();
@@ -386,11 +386,11 @@ namespace EVE_Bot
 
 
             // 避免喵子的触发
-            if (jsonGrpMsg.message.Split(new string[] { "喵" }, StringSplitOptions.None).Length >
-                jsonGrpMsg.message.Split(new string[] { "喵子", "喵祖", "喵隼", "喵帕斯" }, StringSplitOptions.None).Length)
+            if (strMessage.Split(new string[] { "喵" }, StringSplitOptions.None).Length >
+                strMessage.Split(new string[] { "喵子", "喵祖", "喵隼", "喵帕斯" }, StringSplitOptions.None).Length)
             {
-                int nCount = jsonGrpMsg.message.Split(new string[] { "喵" }, StringSplitOptions.None).Length;
-                if (nCount > 100)
+                int nCount = strMessage.Split(new string[] { "喵" }, StringSplitOptions.None).Length;
+                if (nCount > 5)
                 {
                     strValue += "你喵那么多干嘛啦";
                 }
@@ -399,7 +399,7 @@ namespace EVE_Bot
                     //int nIndex = jsonGrpMsg.message.IndexOf("喵");
                     //string strLast = jsonGrpMsg.message.Substring(nIndex + 1);
                     string strLast = Commons.rnd.Next() % 10 > 6 ? "喵？" : "喵！";
-                    strValue += jsonGrpMsg.message + strLast;
+                    strValue += strMessage + strLast;
                 }
             }
 

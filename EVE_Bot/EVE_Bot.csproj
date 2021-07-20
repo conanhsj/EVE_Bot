@@ -83,6 +83,7 @@
     <Compile Include="JsonEVE\PriceInfo.cs" />
     <Compile Include="JsonEVE\Recycle.cs" />
     <Compile Include="JsonEVE\SearchResult.cs" />
+    <Compile Include="JsonEVE\Solar.cs" />
     <Compile Include="JsonEVE\Sovereignty.cs" />
     <Compile Include="JsonEVE\Wormhole.cs" />
     <Compile Include="JsonEVE\WormholeSystem.cs" />
