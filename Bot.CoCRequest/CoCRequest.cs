@@ -75,16 +75,69 @@ namespace Bot.CoCRequest
             {
                 strReturn = SanRC(jsonGrpMsg, strMessage);
             }
+            else if (strMessage.IndexOf("检定") > 0)
+            {
+                strReturn = Checkout(jsonGrpMsg, strMessage);
+            }
             else
             {
                 strReturn = "目前可用的功能有：\n";
-                strReturn += "车卡，查询，理智增强\n";
+                strReturn += "车卡，查询，检定，理智增强\n";
             }
 
 
             return strReturn;
         }
 
+        private string Checkout(JORecvGroupMsg jsonGrpMsg, string strMessage)
+        {
+            strMessage = strMessage.Substring(strMessage.IndexOf("检定") + 2).Trim();
+            string[] strArgs = strMessage.Split(' ');
+            string strReturn = string.Empty;
+
+            Character Check = lstChara.Find(Player => Player.Groupid == jsonGrpMsg.group_id && Player.Userid == jsonGrpMsg.sender.user_id);
+            if (Check == null)
+            {
+                strReturn = "您在本群还没有建立角色，请使用「CoC 车卡」来创建角色";
+                return strReturn;
+            }
+
+            DiceResult dice;
+            string strProp = string.Empty;
+            int nStatus = 0;
+            if (strArgs.Length >= 1 && !string.IsNullOrEmpty(strArgs[0]))
+            {
+                if (Constants.dicKeywords.ContainsKey(strArgs[0]))
+                {
+                    strProp = strArgs[0];
+                    nStatus = Constants.GetPropValue(Check, Constants.dicKeywords[strProp]);
+                    dice = Constants.RollDices(1, 100);
+                    strReturn += "你的" + strProp + "有：" + nStatus + " 检定点数为：" + dice.Point + "\n";
+                    strReturn += Constants.CheckResult(nStatus, dice.Point);
+                }
+                else
+                {
+                    foreach (string Key in Constants.dicKeywords.Keys)
+                    {
+                        strProp += Key + ",";
+                    }
+                    strReturn += "目前可以检定的属性有：" + strProp.TrimEnd(',');
+                }
+            }
+            else
+            {
+                //随机抽一个
+                dice = Constants.RollDices(1, Constants.dicKeywords.Count);
+                strProp = Constants.dicKeywords.Keys.ToList()[dice.Point];
+                strReturn += "你没说要检定的内容，那就测个" + strProp + "吧\n";
+                //扔个属性
+                nStatus = Constants.GetPropValue(Check, Constants.dicKeywords[strProp]);
+                dice = Constants.RollDices(1, 100);
+                strReturn += "你的" + strProp + "有：" + nStatus + " 检定点数为：" + dice.Point + "\n";
+                strReturn += Constants.CheckResult(nStatus, dice.Point);
+            }
+            return strReturn;
+        }
         private string CheckCharacter(JORecvGroupMsg jsonGrpMsg, string strMessage)
         {
             strMessage = strMessage.Substring(strMessage.IndexOf("查询") + 2).Trim();
@@ -144,9 +197,9 @@ namespace Bot.CoCRequest
                 }
                 else
                 {
-                    if (nAge >= 90)
+                    if (nAge >= 90 || nAge < 15)
                     {
-                        nAge = ((nAge - 15) % 75) + 15;
+                        nAge = (Math.Abs(nAge - 15) % 75) + 15;
                         strReturn += "你被强制轮回了，被改为了" + nAge.ToString() + "岁\n";
                     }
                 }
@@ -185,9 +238,14 @@ namespace Bot.CoCRequest
                 strMessage = regCQCode.Replace(strMessage, "");
             }
 
-            if (strMessage.IndexOf("车卡") > 0)
+            if (strMessage.IndexOf("检定") > 0)
             {
-                strReturn = CreateInvestigator(jsonGrpMsg, strMessage);
+                strReturn = Checkout(jsonGrpMsg, strMessage);
+            }
+            else
+            {
+                strReturn = "目前可用的功能有：\n";
+                strReturn += "检定\n";
             }
 
 

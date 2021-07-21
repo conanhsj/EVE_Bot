@@ -15,6 +15,20 @@ namespace Bot.CoCRequest
         public static string Path_Base = @"CoC7th";
         public static string Path_Characters = @"\Lib\" + Path_Base + @"\Characters.json";
 
+        public static Dictionary<string, string> dicKeywords = new Dictionary<string, string>()
+        {
+            { "力量","STR" },
+            { "体质","CON" },
+            { "体型","SIZ" },
+            { "敏捷","DEX" },
+            { "外貌","APP" },
+            { "智力","INT" },
+            { "意志","POW" },
+            { "教育","EDU" },
+            { "幸运","LKY" },
+        };
+
+
 
         public static DiceResult RollDices(int Count, int MaxPoint)
         {
@@ -67,6 +81,43 @@ namespace Bot.CoCRequest
                 sw.Write(strContent);
             }
             //Environment.
+        }
+
+        public static int GetPropValue(object src, string propName)
+        {
+            object Prop = src.GetType().GetProperty(propName).GetValue(src, null);
+            int Value = 0;
+            int.TryParse(Prop.ToString(), out Value);
+
+            return Value;
+        }
+
+        public static string CheckResult(int BaseStatus, int CheckResult)
+        {
+            string strResult = string.Empty;
+
+            if (CheckResult == 1)
+            {
+                strResult = "大成功";
+            }
+            else if (CheckResult <= (BaseStatus / 5))
+            {
+                strResult = "极难成功";
+            }
+            else if (CheckResult <= (BaseStatus / 2))
+            {
+                strResult = "困难成功";
+            }
+            else if (CheckResult <= BaseStatus)
+            {
+                strResult = "检定成功";
+            }
+            else if (CheckResult > BaseStatus)
+            {
+                strResult = "检定失败";
+            }
+
+            return strResult;
         }
     }
 }

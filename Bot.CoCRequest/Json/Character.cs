@@ -124,7 +124,7 @@ namespace Bot.CoCRequest.Json
                 CreateLog += "力量惩罚结果为：" + dice.Point.ToString() + " 体型惩罚：" + (5 - dice.Point).ToString() + "\n";
                 STR = STR - dice.Point;
                 SIZ = SIZ - (5 - dice.Point);
-                CreateLog += "教育惩罚：5 点";
+                CreateLog += "教育惩罚：5 点\n";
                 EDU = EDU - 5;
                 dice = Constants.RollDices(3, 6);
                 CreateLog += "额外幸运的结果为：" + dice.Result;
@@ -331,5 +331,7 @@ namespace Bot.CoCRequest.Json
 
             return strValue;
         }
+
+
     }
 }
