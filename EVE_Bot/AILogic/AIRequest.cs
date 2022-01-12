@@ -74,15 +74,18 @@ namespace EVE_Bot.AILogic
             {
                 int QQNumber = jsonGrpMsg.message.IndexOf("[CQ:at,qq=");
                 string strTar = jsonGrpMsg.message.Substring(QQNumber + 10);
+                string strName = strTar.Substring(strTar.IndexOf('@') + 1);
+                strName = strName.Substring(0, strName.IndexOf(']')).Trim();
+
                 string strDick = strInput.Substring(strInput.IndexOf("今日的丁丁长度是") + 8);
 
                 string strToday = DateTime.Now.ToString("yyyy-MM-dd");
                 if (dicTodayDick.ContainsKey(strToday))
                 {
                     Dictionary<string, string> dicDick = dicTodayDick[strToday];
-                    if (!dicDick.ContainsKey(strTar))
+                    if (!dicDick.ContainsKey(strName))
                     {
-                        dicDick.Add(strTar, strDick);
+                        dicDick.Add(strName, strDick);
                     }
                     FilesHelper.OutputJsonFile("Talking\\Dick", JsonConvert.SerializeObject(dicTodayDick, Formatting.Indented));
                 }
@@ -98,7 +101,7 @@ namespace EVE_Bot.AILogic
                         }
                     }
                     Dictionary<string, string> dicDick = new Dictionary<string, string>();
-                    dicDick.Add(strTar, strDick);
+                    dicDick.Add(strName, strDick);
                     dicTodayDick.Add(strToday, dicDick);
                     FilesHelper.OutputJsonFile("Talking\\Dick", JsonConvert.SerializeObject(dicTodayDick, Formatting.Indented));
                 }

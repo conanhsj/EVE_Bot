@@ -53,7 +53,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AILogic\AIRequest.cs" />
-    <Compile Include="AILogic\HSORequest.cs" />
     <Compile Include="AILogic\MoodRequest.cs" />
     <Compile Include="AILogic\EVERequest.cs" />
     <Compile Include="AILogic\RollRequest.cs" />
@@ -82,12 +81,14 @@
     <Compile Include="JsonEVE\Price.cs" />
     <Compile Include="JsonEVE\PriceInfo.cs" />
     <Compile Include="JsonEVE\Recycle.cs" />
+    <Compile Include="JsonEVE\Reward.cs" />
     <Compile Include="JsonEVE\SearchResult.cs" />
     <Compile Include="JsonEVE\Solar.cs" />
     <Compile Include="JsonEVE\Sovereignty.cs" />
     <Compile Include="JsonEVE\Wormhole.cs" />
     <Compile Include="JsonEVE\WormholeSystem.cs" />
     <Compile Include="JsonGame\WolfChara.cs" />
+    <Compile Include="JsonObject\GroupUserInfo.cs" />
     <Compile Include="JsonObject\JOAPI.cs" />
     <Compile Include="JsonObject\JOData.cs" />
     <Compile Include="JsonObject\JOGroupMessage.cs" />

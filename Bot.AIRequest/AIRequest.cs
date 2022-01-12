@@ -81,8 +81,8 @@ namespace Bot.AIRequest
                 }
             }
 
- 
 
+            strThinkResult = "";
             if (lstFilter.Count > 0)
             {
                 string strValue = string.Empty;

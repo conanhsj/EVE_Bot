@@ -29,6 +29,7 @@ namespace EVE_Bot
     public partial class frmMain : Form
     {
         private ClientWebSocket ws = new ClientWebSocket();
+        private ClientWebSocket wsSent = new ClientWebSocket();
         private CancellationToken cancelState = new CancellationToken();
         private BackgroundWorker bgw = new BackgroundWorker();
 
@@ -44,7 +45,10 @@ namespace EVE_Bot
         //Q群冷却计时器
         private Dictionary<Int64, System.Timers.Timer> dicGroupRepeat = new Dictionary<long, System.Timers.Timer>();
         //模块化
-        private Dictionary<string, string> dicModuleConfig = new Dictionary<string, string>() { { "狼人杀", "WolfRequest" }, { "ROLL", "RollRequest" }, { "占卜", "UraraRequest" }, { "赛马娘", "DerbyRequest" }, { "COC", "CoCRequest" } };
+        private Dictionary<string, string> dicModuleConfig = new Dictionary<string, string>() {
+            { "狼人杀", "WolfRequest" }, { "ROLL", "RollRequest" },
+            { "占卜", "UraraRequest" }, { "赛马娘", "DerbyRequest" },
+            { "COC", "CoCRequest" },{"EVE","EveRequest" } };
         //模块化
         private Dictionary<string, Lazy<IMessageRequest>> dicRequestModule = new Dictionary<string, Lazy<IMessageRequest>>();
         private Dictionary<string, IMessageRequest> dicModule = new Dictionary<string, IMessageRequest>();
@@ -161,18 +165,20 @@ namespace EVE_Bot
         //后台进程
         private async void Bgw_DoWork(object sender, DoWorkEventArgs e)
         {
-            await ws.ConnectAsync(new Uri("ws://127.0.0.1:5700"), cancelState);
+            await ws.ConnectAsync(new Uri("ws://127.0.0.1:5700/get_msg"), cancelState);
+            await wsSent.ConnectAsync(new Uri("ws://127.0.0.1:5700"), cancelState);
             //string strValue = BuildSendMessage(443029533,this.rtbInput.Text);
             //strValue = Regex.Replace(strValue, "\"(\\w+)\":", "$1:");
             //await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strValue)), WebSocketMessageType.Text, true, cancelState);
 
             while (true)
             {
-                byte[] byteCache = new byte[10000];
+                JORecvGroupMsg jsonGrpMsg = null;
+
+                byte[] byteCache = new byte[50000];
                 ArraySegment<byte> Result = new ArraySegment<byte>(byteCache);
                 await ws.ReceiveAsync(Result, CancellationToken.None);//接受数据
                 var str = Encoding.UTF8.GetString(Result.ToArray(), 0, Result.Count);
-                JORecvGroupMsg jsonGrpMsg = null;
                 try
                 {
 
@@ -185,7 +191,6 @@ namespace EVE_Bot
                     }
                     if (jsonGrpMsg.post_type == "meta_event")
                     {
-
                         continue;
                     }
                     if (jsonGrpMsg.message_type == "group")
@@ -211,14 +216,16 @@ namespace EVE_Bot
                 }
                 catch (Exception ex)
                 {
-                    string strError = TemplateBuilder.BuildSendMessage(jsonGrpMsg.group_id, "出错啦：" + ex.Message, false);
-                    await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strError)), WebSocketMessageType.Text, true, cancelState);
+                    //string strError = TemplateBuilder.BuildSendMessage(jsonGrpMsg.group_id, "出错啦：" + ex.Message, false);
+                    //await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strError)), WebSocketMessageType.Text, true, cancelState);
 
-                    string strErrReport = "在群：" + jsonGrpMsg.group_id + "的消息出错啦！\n";
-                    strErrReport += jsonGrpMsg.sender.nickname + "(" + jsonGrpMsg.user_id + ")" + "说了:" + jsonGrpMsg.message + "\n";
-                    strErrReport += "然后就出这个错：\n" + ex.ToString();
+                    //string strErrReport = "在群：" + jsonGrpMsg.group_id + "的消息出错啦！\n";
+                    //strErrReport += jsonGrpMsg.sender.nickname + "(" + jsonGrpMsg.user_id + ")" + "说了:" + jsonGrpMsg.message + "\n";
+                    //strErrReport += "然后就出这个错：\n" + ex.ToString();
+
+                    string strErrReport = "然后就出这个错：\n" + str;
                     string strMessage = TemplateBuilder.BuildSendMessagePrivate(Constants.MasterQQ, strErrReport, true);
-                    await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessage)), WebSocketMessageType.Text, true, cancelState);
+                    await wsSent.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessage)), WebSocketMessageType.Text, true, cancelState);
                 }
 
             }
@@ -257,22 +264,44 @@ namespace EVE_Bot
             {
                 return;
             }
+            string strMessage = jsonGrpMsg.message.Replace("\n", "");
             string strValue = string.Empty;
+
             //获取对应群设定
             JsonGroup group = MoodRequest.lstGroupSetting.Find(obj => obj.group_id == jsonGrpMsg.group_id);
 
+
             //处理+去除CQ码
-            string strMessage = jsonGrpMsg.message;
             bool bIsAtMe = false;
             while (regCQCode.IsMatch(strMessage))
             {
                 string strCQCode = regCQCode.Match(strMessage).Value;
-                if (jsonGrpMsg.message.Contains("[CQ:at,qq=" + jsonGrpMsg.self_id.ToString()))
+                if (strCQCode.Contains("[CQ:at,qq=" + jsonGrpMsg.self_id.ToString()))
                 {
                     bIsAtMe = true;
                 }
-                strMessage = regCQCode.Replace(strMessage, "");
+                strMessage = regCQCode.Replace(strMessage, "", 1);
             }
+
+            if (!string.IsNullOrEmpty(group.LastRequestCheck) && group.LastRequestCheck == strMessage)
+            {
+                if (bIsAtMe)
+                {
+                    await SendMessage(ws, jsonGrpMsg.group_id, jsonGrpMsg.time, "重复同样的话是一件没用的事儿");
+                }
+                else
+                {
+                    await SendMessage(ws, jsonGrpMsg.group_id, jsonGrpMsg.time, strMessage + "+1");
+                    group.LastRequestCheck = "";
+                }
+                return;
+            }
+            else
+            {
+                group.LastRequestCheck = strMessage;
+            }
+
+
             //过于频繁
             if (!string.IsNullOrEmpty(group.RepeatCheck) && strMessage.Contains(group.RepeatCheck)
                 && jsonGrpMsg.time - group.last_time < 15)
@@ -308,6 +337,8 @@ namespace EVE_Bot
                     return;
                 }
             }
+
+
             //情话→彩虹屁
             if (MoodRequest.lstPrattle.Where(Prattle => { return strMessage.Contains(Prattle); }).ToList().Count > 0)
             {
@@ -321,10 +352,23 @@ namespace EVE_Bot
                 strValue += strDirty;
             }
 
+            List<string> lstAnswer = MoodRequest.dicAnswer.Keys.Where(Item => { return strMessage.ToUpper().Contains(Item.ToUpper()); }).ToList();
+            if (lstAnswer.Count > 0)
+            {
+                strValue += "[CQ:at,qq=" + jsonGrpMsg.sender.user_id + "]";
+                foreach (string key in lstAnswer)
+                {
+                    strValue += MoodRequest.dicAnswer[key] + "，";
+                }
+                strValue = strValue.TrimEnd('，');
+            }
+
             if (bIsAtMe)
             {
                 strValue = MoodRequest.DealAtRequest(ws, jsonGrpMsg);
             }
+
+
             else if (dicModuleConfig.Keys.Where(Keys => { return strMessage.ToUpper().StartsWith(Keys); }).ToList().Count > 0)
             {
                 string strKey = dicModuleConfig.Keys.Where(Keys => { return strMessage.ToUpper().StartsWith(Keys); }).First();
@@ -359,14 +403,19 @@ namespace EVE_Bot
                 else
                 {
                     group.last_setu_time = jsonGrpMsg.time;
-                    JOResponse jOResponse = HSORequest.GetSetu();
-                    if (jOResponse.code == 0)
+                    if (dicRequestModule.ContainsKey("HsoRequest"))
                     {
-                        foreach (JsonSetu.JOData Image in jOResponse.data)
+                        Lazy<IMessageRequest> objModuleLazy = dicRequestModule["HsoRequest"];
+                        if (!objModuleLazy.IsValueCreated)
                         {
-                            //strValue += "[CQ:image,file=" + Image.url + ",cache=1]";
-                            strValue += "作者：" + Image.author + " 标题：" + Image.title + "\n";
-                            strValue += Image.url;
+                            IMessageRequest objModule = objModuleLazy.Value;
+                            dicModule.Add("HsoRequest", objModule);
+                            Application.DoEvents();
+                            strValue += dicModule["HsoRequest"].DealGroupRequest(jsonGrpMsg);
+                        }
+                        else
+                        {
+                            strValue += dicModule["HsoRequest"].DealGroupRequest(jsonGrpMsg);
                         }
                     }
                 }
@@ -415,7 +464,6 @@ namespace EVE_Bot
             {
                 string strValue = string.Empty;
 
-
                 if (dicModuleConfig.Keys.Where(Keys => { return jsonGrpMsg.message.ToUpper().StartsWith(Keys); }).ToList().Count > 0)
                 {
                     string strKey = dicModuleConfig.Keys.Where(Keys => { return jsonGrpMsg.message.ToUpper().StartsWith(Keys); }).First();
@@ -435,20 +483,25 @@ namespace EVE_Bot
                 }
                 else if (jsonGrpMsg.message.EndsWith("色图") || jsonGrpMsg.message.Contains("涩图"))
                 {
-                    JOResponse jOResponse = HSORequest.GetSetu();
-                    if (jOResponse.code == 0)
+                    if (dicRequestModule.ContainsKey("HsoRequest"))
                     {
-                        foreach (JsonSetu.JOData Image in jOResponse.data)
+                        Lazy<IMessageRequest> objModuleLazy = dicRequestModule["HsoRequest"];
+                        if (!objModuleLazy.IsValueCreated)
                         {
-                            //strValue += "[CQ:image,file=" + Image.url + ",cache=1]";
-                            strValue += "作者：" + Image.author + " 标题：" + Image.title + "\n";
-                            strValue += Image.url;
+                            IMessageRequest objModule = objModuleLazy.Value;
+                            dicModule.Add("HsoRequest", objModule);
+                            Application.DoEvents();
+                            strValue += dicModule["HsoRequest"].DealPrivateRequest(jsonGrpMsg);
+                        }
+                        else
+                        {
+                            strValue += dicModule["AIRequest"].DealPrivateRequest(jsonGrpMsg);
                         }
                     }
                 }
-                else if (jsonGrpMsg.message.IndexOf("群发至：") >= 0)
+                else if (jsonGrpMsg.message.IndexOf("群发至") >= 0)
                 {
-                    strValue = jsonGrpMsg.message.Substring(jsonGrpMsg.message.IndexOf("群发至："));
+                    strValue = jsonGrpMsg.message.Substring(jsonGrpMsg.message.IndexOf("群发至"));
                 }
                 else if (jsonGrpMsg.message.StartsWith("释放"))
                 {
@@ -466,7 +519,25 @@ namespace EVE_Bot
                 {
                     strValue = EVERequest.DealSearchRequest(ws, jsonGrpMsg);
                 }
-                else
+                else if (jsonGrpMsg.message.Contains("群列表"))
+                {
+                    string strReq = TemplateBuilder.ActionGetUserList(443029533, "", false);
+
+                    byte[] byteCache = new byte[500000];
+                    ArraySegment<byte> Result = new ArraySegment<byte>(byteCache);
+                    await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strReq)), WebSocketMessageType.Text, true, cancelState);
+                    Application.DoEvents();
+
+                    await ws.ReceiveAsync(Result, CancellationToken.None);//接受数据
+
+                    var str = Encoding.UTF8.GetString(Result.ToArray(), 0, Result.Count);
+
+
+                    //List<GroupUserInfo> lstGroupUser = JsonConvert.DeserializeObject<List<GroupUserInfo>>(str);
+
+                    strValue += str;
+                }
+                else if (jsonGrpMsg.message.Contains("脏话统计"))
                 {
                     if (dicRequestModule.ContainsKey("AIRequest"))
                     {
@@ -484,13 +555,16 @@ namespace EVE_Bot
                         }
                     }
                 }
+
                 string strMessageGroup = string.Empty;
-                if (strValue.IndexOf("群发至：") >= 0)
+                if (strValue.IndexOf("群发至") >= 0)
                 {
-                    strMessageGroup = strValue.Substring(strValue.IndexOf("群发至：") + 4).Trim();
+                    strMessageGroup = strValue.Substring(strValue.IndexOf("群发至") + 3).Trim('：',':',' ');
                     long groupID = long.Parse(strMessageGroup.Substring(0, strMessageGroup.IndexOf(' ')));
 
                     strMessageGroup = strMessageGroup.Substring(strMessageGroup.IndexOf(' ') + 1).Trim();
+
+                    strMessageGroup = strMessageGroup.Replace("@全体成员", "[CQ:at,qq=all,text=@全体成员]");
 
                     strMessageGroup = TemplateBuilder.BuildSendMessage(groupID, strMessageGroup, false);
                     await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessageGroup)), WebSocketMessageType.Text, true, cancelState);
@@ -498,13 +572,13 @@ namespace EVE_Bot
 
 
                 strValue += Commons.rnd.Next() % 100 < 10 ? "喵" : "";
-                string strMessage = TemplateBuilder.BuildSendMessagePrivate(jsonGrpMsg.user_id, strValue, false);
-                await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessage)), WebSocketMessageType.Text, true, cancelState);
+                strValue = TemplateBuilder.BuildSendMessagePrivate(jsonGrpMsg.user_id, strValue, false);
+                await wsSent.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strValue)), WebSocketMessageType.Text, true, cancelState);
             }
             catch (Exception ex)
             {
                 string strMessage = TemplateBuilder.BuildSendMessagePrivate(Constants.MasterQQ, jsonGrpMsg.user_id + "说：" + jsonGrpMsg.message.ToUpper() + "的时候弄出BUG啦：\n" + ex.ToString(), false);
-                await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessage)), WebSocketMessageType.Text, true, cancelState);
+                await wsSent.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessage)), WebSocketMessageType.Text, true, cancelState);
             }
 
         }
@@ -514,7 +588,7 @@ namespace EVE_Bot
         {
             strValue += Commons.rnd.Next() % 100 < 10 ? "喵" : "";
             string strMessage = TemplateBuilder.BuildSendMessage(group_id, strValue, false);
-            await ws.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessage)), WebSocketMessageType.Text, true, cancelState);
+            await wsSent.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(strMessage)), WebSocketMessageType.Text, true, cancelState);
             JsonGroup group = MoodRequest.lstGroupSetting.Find(obj => obj.group_id == group_id);
             if (group != null)
             {

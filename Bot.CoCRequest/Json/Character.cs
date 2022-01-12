@@ -22,6 +22,20 @@ namespace Bot.CoCRequest.Json
         //衍生属性
         private int sAN, mP, hP, dB, pHY;
         private int mOV;
+
+        private string job;
+
+        private List<Skill> skills;
+
+        //本职技能点
+        private int mainSkillPoint;
+        //技能点
+        private int interestPoint;
+        //当前状态
+        private string status;
+
+        private string impression, belief, important, place, treasure, special;
+
         public Character(int nAge)
         {
 
@@ -74,8 +88,22 @@ namespace Bot.CoCRequest.Json
             mP = POW / 5;
             hP = (sIZ + cON) / 10;
             MovFix(nAge);
+
+            dice = Constants.RollDices(1, ConstInfo.lstJobs.Count);
+            job = ConstInfo.lstJobs[dice.Point - 1].Name;
+            Constants.SelectJob(this, ConstInfo.lstJobs[dice.Point - 1]);
+
+            interestPoint = iNT * 2;
+
+            impression = "无";
+            belief = ConstInfo.lstBelief[Constants.RollDices(1, ConstInfo.lstBelief.Count).Point - 1];
+            important = ConstInfo.lstVIP[Constants.RollDices(1, ConstInfo.lstVIP.Count).Point - 1] + "因为"+ ConstInfo.lstReason[Constants.RollDices(1, ConstInfo.lstReason.Count).Point - 1];
+            place = ConstInfo.lstPlace[Constants.RollDices(1, ConstInfo.lstPlace.Count).Point - 1];
+            treasure = ConstInfo.lstTreasure[Constants.RollDices(1, ConstInfo.lstTreasure.Count).Point - 1];
+            special = ConstInfo.lstSpecial[Constants.RollDices(1, ConstInfo.lstSpecial.Count).Point - 1];
         }
 
+        //移动力调整
         private void MovFix(int nAge)
         {
             if (dEX < sIZ && sTR < sIZ)
@@ -115,6 +143,7 @@ namespace Bot.CoCRequest.Json
             return;
         }
 
+        //年龄调整
         private void AgeFix(int nAge)
         {
             DiceResult dice;
@@ -155,6 +184,7 @@ namespace Bot.CoCRequest.Json
                     eDU = 99;
                 }
                 SenilityDebuff(5);
+                CreateLog += "外貌惩罚5点";
                 APP = APP - 5;
             }
             else if (nAge >= 50 && nAge < 60)
@@ -163,6 +193,7 @@ namespace Bot.CoCRequest.Json
                 EduRefCheck();
                 EduRefCheck();
                 SenilityDebuff(10);
+                CreateLog += "外貌惩罚10点";
                 APP = APP - 10;
             }
             else if (nAge >= 60 && nAge < 70)
@@ -172,6 +203,7 @@ namespace Bot.CoCRequest.Json
                 EduRefCheck();
                 EduRefCheck();
                 SenilityDebuff(20);
+                CreateLog += "外貌惩罚15点";
                 APP = APP - 15;
             }
             else if (nAge >= 70 && nAge < 80)
@@ -181,6 +213,7 @@ namespace Bot.CoCRequest.Json
                 EduRefCheck();
                 EduRefCheck();
                 SenilityDebuff(40);
+                CreateLog += "外貌惩罚20点";
                 APP = APP - 20;
             }
             else if (nAge >= 80 && nAge < 90)
@@ -190,6 +223,7 @@ namespace Bot.CoCRequest.Json
                 EduRefCheck();
                 EduRefCheck();
                 SenilityDebuff(80);
+                CreateLog += "外貌惩罚25点";
                 APP = APP - 25;
             }
 
@@ -209,8 +243,8 @@ namespace Bot.CoCRequest.Json
             else
             {
                 CreateLog += "力量衰老" + sTR + "点\n";
-                sTR = 0;
                 nBaseDebuff = nBaseDebuff - sTR;
+                sTR = 0;
             }
             if (nBaseDebuff > 0)
             {
@@ -224,8 +258,8 @@ namespace Bot.CoCRequest.Json
                 else
                 {
                     CreateLog += "敏捷衰老" + dEX + "点\n";
-                    dEX = 0;
                     nBaseDebuff = nBaseDebuff - dEX;
+                    dEX = 0;
                 }
             }
             if (nBaseDebuff > 0)
@@ -239,27 +273,30 @@ namespace Bot.CoCRequest.Json
                 {
                     CreateLog += "体质衰老" + (cON - 1) + "点\n";
                     nBaseDebuff = nBaseDebuff - (cON - 1);
+                    cON = 1;
                     if (nBaseDebuff <= sTR)
                     {
                         CreateLog += "力量追加衰老" + nBaseDebuff + "点\n";
                         sTR = sTR - nBaseDebuff;
+                        nBaseDebuff = 0;
                     }
                     else
                     {
                         CreateLog += "力量追加衰老" + sTR + "点\n";
-                        sTR = 0;
                         nBaseDebuff = nBaseDebuff - sTR;
+                        sTR = 0;
                     }
-                    if (nBaseDebuff <= dEX)
+                    if (nBaseDebuff != 0 && nBaseDebuff <= dEX)
                     {
                         CreateLog += "敏捷追加衰老" + nBaseDebuff + "点\n";
                         dEX = dEX - nBaseDebuff;
+                        nBaseDebuff = 0;
                     }
                     else
                     {
                         CreateLog += "敏捷追加衰老" + dEX + "点\n";
-                        dEX = 0;
                         nBaseDebuff = nBaseDebuff - dEX;
+                        dEX = 0;
                     }
                     if (nBaseDebuff > 0)
                     {
@@ -277,6 +314,7 @@ namespace Bot.CoCRequest.Json
         private void EduRefCheck()
         {
             DiceResult dice = Constants.RollDices(1, 100);
+            CreateLog += "教育增强检定";
             if (dice.Point > eDU)
             {
                 CreateLog += "成功,";
@@ -290,6 +328,7 @@ namespace Bot.CoCRequest.Json
             }
             return;
         }
+
 
         public long Groupid { get => groupid; set => groupid = value; }
         public long Userid { get => userid; set => userid = value; }
@@ -312,22 +351,72 @@ namespace Bot.CoCRequest.Json
         public int DB { get => dB; set => dB = value; }
         public int PHY { get => pHY; set => pHY = value; }
         public int MOV { get => mOV; set => mOV = value; }
+        public string Status { get => status; set => status = value; }
+        public int InterestPoint { get => interestPoint; set => interestPoint = value; }
+        public string Job { get => job; set => job = value; }
+        public List<Skill> Skills { get => skills; set => skills = value; }
+        public int MainSkillPoint { get => mainSkillPoint; set => mainSkillPoint = value; }
+        public string Impression { get => impression; set => impression = value; }
+        public string Belief { get => belief; set => belief = value; }
+        public string Important { get => important; set => important = value; }
+        public string Place { get => place; set => place = value; }
+        public string Treasure { get => treasure; set => treasure = value; }
+        public string Special { get => special; set => special = value; }
 
         public override string ToString()
         {
             string strValue = string.Empty;
 
-            strValue += "名称：" + NickName + " 年龄：" + Age.ToString() + " 性别：" + Sex + "\n";
-            strValue += " ————基础属性————\n";
-            strValue += "力量：" + STR.ToString() + " 体质：" + CON.ToString() + " 体型：" + SIZ.ToString() + "\n";
-            strValue += "敏捷：" + DEX.ToString() + " 外貌：" + APP.ToString() + " 智力：" + INT.ToString() + "\n";
-            strValue += "意志：" + POW.ToString() + " 教育：" + EDU.ToString() + " 幸运：" + LKY.ToString() + "\n";
-            if (cON > 0)
+            try
             {
-                strValue += " ————衍生属性————\n";
-                strValue += "生命：" + HP.ToString() + " 魔力：" + MP.ToString() + " 理智：" + SAN.ToString() + "\n";
-                strValue += "移动：" + MOV.ToString() + "\n";
+
+                strValue += "名称：" + NickName + " 年龄：" + Age.ToString() + " 性别：" + Sex + "\n";
+                strValue += " ————基础属性————\n";
+                strValue += "力量：" + STR.ToString() + " " + Constants.GetDescription(ConstInfo.lstSTR, sTR) + "\n";
+                strValue += "体质：" + CON.ToString() + " " + Constants.GetDescription(ConstInfo.lstCON, cON) + "\n";
+                strValue += "体型：" + SIZ.ToString() + " " + Constants.GetDescription(ConstInfo.lstSIZ, sIZ) + "\n";
+                strValue += "敏捷：" + DEX.ToString() + " " + Constants.GetDescription(ConstInfo.lstDEX, dEX) + "\n";
+                strValue += "外貌：" + APP.ToString() + " " + Constants.GetDescription(ConstInfo.lstAPP, APP) + "\n";
+                strValue += "智力：" + INT.ToString() + " " + Constants.GetDescription(ConstInfo.lstINT, INT) + "\n";
+                strValue += "意志：" + POW.ToString() + " " + Constants.GetDescription(ConstInfo.lstPOW, pOW) + "\n";
+                strValue += "教育：" + EDU.ToString() + " " + Constants.GetDescription(ConstInfo.lstEDU, eDU) + "\n";
+                strValue += "幸运：" + LKY.ToString() + "\n";
+                if (cON > 0)
+                {
+                    strValue += " ————衍生属性————\n";
+                    strValue += "生命：" + HP.ToString() + " 魔力：" + MP.ToString() + " 理智：" + SAN.ToString() + "移动：" + MOV.ToString() + "\n";
+                }
+                else
+                {
+                    return strValue;
+                }
+
+                if (!string.IsNullOrEmpty(Job))
+                {
+                    strValue += " ————职业属性————\n";
+                    strValue += "职业：" + Job.ToString() + " 本职点：" + mainSkillPoint.ToString() + " 兴趣点：" + interestPoint.ToString() + "\n";
+                    foreach (Skill item in skills)
+                    {
+                        strValue += "技能名：" + item.Name + " 基础点数：" + item.BasePoint.ToString() + "\n";
+                    }
+                }
+                if(impression != null)
+                {
+                    strValue += " ————调查员背景————\n";
+                    strValue += "形象描述：" + Impression.ToString() + "\n";
+                    strValue += "思想/信念：" + Belief.ToString() + "\n";
+                    strValue += "重要之人：" + Important.ToString() + "\n";
+                    strValue += "意义非凡之地：" + Place.ToString() + "\n";
+                    strValue += "宝贵之物：" + Treasure.ToString() + "\n";
+                    strValue += "特质：" + Special.ToString() + "\n";
+                }
+
             }
+            catch (Exception ex)
+            {
+                strValue += ex.ToString();
+            }
+
 
             return strValue;
         }

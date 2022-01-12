@@ -46,9 +46,14 @@
   <ItemGroup>
     <Compile Include="CoCRequest.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="ConstInfo.cs" />
     <Compile Include="Json\Character.cs" />
+    <Compile Include="Objects\DescriptionStatus.cs" />
     <Compile Include="Objects\DiceResult.cs" />
+    <Compile Include="Objects\Job.cs" />
     <Compile Include="Objects\RCResult.cs" />
+    <Compile Include="Objects\SanCheckPattern.cs" />
+    <Compile Include="Objects\Skill.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

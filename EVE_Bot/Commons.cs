@@ -42,45 +42,94 @@ namespace EVE_Bot
             strCell = strCell.Replace(",", "");
             if (!int.TryParse(strCell, out dRnt))
             {
-        
+
             }
             return dRnt;
         }
 
         public static string FormatISK(string strISK)
         {
-            if (strISK.Length > 11)
+            if (strISK.Length > 12)
             {
-                //亿换算
-                strISK = (Commons.ReadDouble(strISK) / 100000000).ToString("0.0000").TrimEnd('0');
-                if (strISK.Contains('.') && strISK.Length < 6)
+                //十亿换算
+                strISK = (Commons.ReadDouble(strISK) / 1000000000).ToString("0.00");
+                if (strISK.Contains('.') && strISK.Length < 5)
                 {
-                    strISK = strISK.PadRight(6, '0');
+                    strISK = strISK.PadRight(5, '0');
                 }
                 else
                 {
-                    strISK = strISK.PadLeft(6, ' ');
+                    strISK = strISK.PadLeft(5, ' ');
                 }
-                strISK += "亿";
+                strISK += "十亿";
             }
-            else if (strISK.Length > 7)
+            else if (strISK.Length > 9)
             {
-                //万换算
-                strISK = (Commons.ReadDouble(strISK) / 10000).ToString("0.0000").TrimEnd('0');
-                if (strISK.Contains('.') && strISK.Length < 6)
+                //百万换算
+                strISK = (Commons.ReadDouble(strISK) / 1000000).ToString("0.00");
+                if (strISK.Contains('.') && strISK.Length < 5)
                 {
-                    strISK = strISK.PadRight(6, '0');
+                    strISK = strISK.PadRight(5, '0');
                 }
                 else
                 {
-                    strISK = strISK.PadLeft(6, ' ');
+                    strISK = strISK.PadLeft(5, ' ');
                 }
-                strISK += "万";
+                strISK += "百万";
+            }
+            else if (strISK.Length > 6)
+            {
+                //千换算
+                strISK = (Commons.ReadDouble(strISK) / 1000).ToString("0.00");
+                if (strISK.Contains('.') && strISK.Length < 5)
+                {
+                    strISK = strISK.PadRight(5, '0');
+                }
+                else
+                {
+                    strISK = strISK.PadLeft(5, ' ');
+                }
+                strISK += "千";
             }
             else
             {
-                strISK = strISK.PadLeft(8, ' ');
+                strISK = strISK.PadLeft(7, ' ');
             }
+
+            #region 亿，万
+            //if (strISK.Length > 11)
+            //{
+            //    //亿换算
+            //    strISK = (Commons.ReadDouble(strISK) / 100000000).ToString("0.0000").TrimEnd('0');
+            //    if (strISK.Contains('.') && strISK.Length < 6)
+            //    {
+            //        strISK = strISK.PadRight(6, '0');
+            //    }
+            //    else
+            //    {
+            //        strISK = strISK.PadLeft(6, ' ');
+            //    }
+            //    strISK += "亿";
+            //}
+            //else if (strISK.Length > 7)
+            //{
+            //    //万换算
+            //    strISK = (Commons.ReadDouble(strISK) / 10000).ToString("0.0000").TrimEnd('0');
+            //    if (strISK.Contains('.') && strISK.Length < 6)
+            //    {
+            //        strISK = strISK.PadRight(6, '0');
+            //    }
+            //    else
+            //    {
+            //        strISK = strISK.PadLeft(6, ' ');
+            //    }
+            //    strISK += "万";
+            //}
+            //else
+            //{
+            //    strISK = strISK.PadLeft(8, ' ');
+            //}
+            #endregion
 
             return strISK;
         }

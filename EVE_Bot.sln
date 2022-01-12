@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot.UraraRequest", "Bot.Ura
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot.CoCRequest", "Bot.CoCRequest\Bot.CoCRequest.csproj", "{F33CC1D6-7A8D-4D37-B424-730E1B618B5B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot.HsoRequest", "Bot.HsoRequest\Bot.HsoRequest.csproj", "{647AE9C4-3C87-4482-8771-44CAA2729CB9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,10 @@ Global
 		{F33CC1D6-7A8D-4D37-B424-730E1B618B5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F33CC1D6-7A8D-4D37-B424-730E1B618B5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F33CC1D6-7A8D-4D37-B424-730E1B618B5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{647AE9C4-3C87-4482-8771-44CAA2729CB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{647AE9C4-3C87-4482-8771-44CAA2729CB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{647AE9C4-3C87-4482-8771-44CAA2729CB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{647AE9C4-3C87-4482-8771-44CAA2729CB9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

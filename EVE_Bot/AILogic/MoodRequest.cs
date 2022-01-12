@@ -46,7 +46,7 @@ namespace EVE_Bot.AILogic
                     return strMessage;
                 }
 
-                FilesHelper.OutputJsonFile("DirtyWord", JsonConvert.SerializeObject(lstDirtyWord, Formatting.Indented));
+                FilesHelper.OutputJsonFile(@"Trigger\DirtyWord", JsonConvert.SerializeObject(lstDirtyWord, Formatting.Indented));
                 strMessage += "变的更脏了";
             }
             else if (strRequest.StartsWith("加入敏感词："))
@@ -62,7 +62,7 @@ namespace EVE_Bot.AILogic
                     strMessage += "已经会了，火星人";
                     return strMessage;
                 }
-                FilesHelper.OutputJsonFile("WarningWord", JsonConvert.SerializeObject(lstWarningWord, Formatting.Indented));
+                FilesHelper.OutputJsonFile(@"Trigger\WarningWord", JsonConvert.SerializeObject(lstWarningWord, Formatting.Indented));
                 strMessage += "变的更敏感了";
             }
             else if (strRequest.StartsWith("删除脏话："))
@@ -77,7 +77,7 @@ namespace EVE_Bot.AILogic
                     strMessage += "我可没那么脏";
                     return strMessage;
                 }
-                FilesHelper.OutputJsonFile("DirtyWord", JsonConvert.SerializeObject(lstDirtyWord, Formatting.Indented));
+                FilesHelper.OutputJsonFile(@"Trigger\DirtyWord", JsonConvert.SerializeObject(lstDirtyWord, Formatting.Indented));
                 strMessage += "变的更干净了";
             }
             else if (strRequest.StartsWith("删除敏感词："))
@@ -92,7 +92,7 @@ namespace EVE_Bot.AILogic
                     strMessage += "我可没那么敏感";
                     return strMessage;
                 }
-                FilesHelper.OutputJsonFile("WarningWord", JsonConvert.SerializeObject(lstWarningWord, Formatting.Indented));
+                FilesHelper.OutputJsonFile(@"Trigger\WarningWord", JsonConvert.SerializeObject(lstWarningWord, Formatting.Indented));
                 strMessage += "变的更正经了";
             }
             else if (strRequest.StartsWith("加入情话："))
@@ -107,7 +107,7 @@ namespace EVE_Bot.AILogic
                     strMessage += "刚刚教过了";
                     return strMessage;
                 }
-                FilesHelper.OutputJsonFile("Prattle", JsonConvert.SerializeObject(lstPrattle, Formatting.Indented));
+                FilesHelper.OutputJsonFile(@"Trigger\Prattle", JsonConvert.SerializeObject(lstPrattle, Formatting.Indented));
                 strMessage += "会更努力的夸你的";
             }
             else if (strRequest.StartsWith("加入彩虹屁："))
@@ -132,8 +132,15 @@ namespace EVE_Bot.AILogic
                 int nIndexComma = strKeyWord.IndexOf("：");
                 if (nIndexComma > 0)
                 {
-                    string strKey = strKeyWord.Substring(0, nIndexComma);
-                    string strValue = strKeyWord.Substring(nIndexComma + 1);
+                    string strKey = strKeyWord.Substring(0, nIndexComma).Trim();
+                    string strValue = strKeyWord.Substring(nIndexComma + 1).Trim();
+
+                    if (string.IsNullOrWhiteSpace(strValue) || string.IsNullOrWhiteSpace(strValue))
+                    {
+                        strMessage += "教的什么怪都东西啊。";
+                        return strMessage;
+                    }
+
                     dicAnswer.Add(strKey, strValue);
                     FilesHelper.OutputJsonFile(@"Trigger\Answer", JsonConvert.SerializeObject(dicAnswer, Formatting.Indented));
                     strMessage += "添加专有问答成功。";
@@ -174,15 +181,20 @@ namespace EVE_Bot.AILogic
             }
             else if (strRequest.Contains("帮助"))
             {
-                string strKeyWord = strRequest.Substring(strRequest.IndexOf(' ') + 1).Trim();
-                if (strRequest.IndexOf(' ') == -1)
-                {
-                    strMessage += "目前支持的触发方式有：\n";
-                    strMessage += "　　！ => 有关EVE的各种查询功能\n";
-                    strMessage += "　　@我  => 有关触发词的设置功能\n";
-                    strMessage += "　　Roll  => 简单的掷骰子功能\n";
-                    strMessage += "　　涩图  => 第三方提供的P站图片功能\n";
-                }
+                strMessage += "目前可以支持的设置内容有：\n";
+                strMessage += "　　加入敏感词：\n";
+                strMessage += "　　加入脏话：\n";
+                strMessage += "　　删除敏感词：\n";
+                strMessage += "　　删除脏话：\n";
+                strMessage += "　　加入专有问答： GBF：碧蓝幻想\n"; 
+                strMessage += "　　备忘：\n";
+                strMessage += "　　留言：\n";
+                strMessage += "这些内容不用艾特我也可以触发：\n";
+                strMessage += "　　！ => 有关EVE的各种查询功能\n";
+                strMessage += "　　Roll  => 简单的掷骰子功能\n";
+                strMessage += "　　涩图  => 第三方提供的P站图片功能\n";
+                strMessage += "　　COC  => 半成品的骰娘功能\n";
+
             }
             else if (strRequest.StartsWith("备忘："))
             {
@@ -230,18 +242,13 @@ namespace EVE_Bot.AILogic
                 FilesHelper.OutputJsonFile("Request", JsonConvert.SerializeObject(dicRequest, Formatting.Indented));
                 strMessage += "好的，记录下来了。可能会看到的。";
             }
-            else
+            else if (jsonGrpMsg.sender.user_id == 691854365)
             {
-                strMessage += "目前可以支持的设置内容有：\n";
-                strMessage += "　　加入敏感词：\n";
-                strMessage += "　　加入脏话：\n";
-                strMessage += "　　删除敏感词：\n";
-                strMessage += "　　删除脏话：\n";
-                strMessage += "　　色图功能：开启\n";
-                strMessage += "　　色图功能：关闭\n";
-                strMessage += "　　备忘：\n";
-                strMessage += "　　留言：\n";
-                strMessage += "　　帮助\n";
+
+            }
+            else 
+            {
+                strMessage += "？叫我干嘛，不会用可以用 @我 帮助 来查看功能";
             }
 
             return strMessage;

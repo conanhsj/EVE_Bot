@@ -73,6 +73,8 @@ namespace Bot.Eve
 
             while (true)
             {
+
+
                 byte[] byteCache = new byte[10000];
                 ArraySegment<byte> Result = new ArraySegment<byte>(byteCache);
                 await ws.ReceiveAsync(Result, CancellationToken.None);//接受数据

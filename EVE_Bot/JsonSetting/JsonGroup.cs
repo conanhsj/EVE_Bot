@@ -21,6 +21,8 @@ namespace EVE_Bot.JsonSetting
         [JsonIgnore]
         public string RepeatCheck;
         [JsonIgnore]
+        public string LastRequestCheck;
+        [JsonIgnore]
         public long last_setu_time;
 
     }

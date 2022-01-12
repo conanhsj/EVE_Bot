@@ -19,9 +19,9 @@ namespace Bot.CoCRequest
     public class CoCRequest : IMessageRequest
     {
         Random rnd = new Random(DateTime.Now.Millisecond);
-        Regex regCQCode = new Regex(@"(?:\[CQ:.*\])");
 
         List<Character> lstChara = null;
+        List<string> lstSeed = new List<string>();
         public CoCRequest()
         {
             ReadChara();
@@ -58,9 +58,9 @@ namespace Bot.CoCRequest
             string strMessage = jsonGrpMsg.message;
             string strReturn = string.Empty;
 
-            while (regCQCode.IsMatch(strMessage))
+            while (Constants.regCQCode.IsMatch(strMessage))
             {
-                strMessage = regCQCode.Replace(strMessage, "");
+                strMessage = Constants.regCQCode.Replace(strMessage, "");
             }
 
             if (strMessage.IndexOf("车卡") > 0)
@@ -75,6 +75,22 @@ namespace Bot.CoCRequest
             {
                 strReturn = SanRC(jsonGrpMsg, strMessage);
             }
+            else if (strMessage.IndexOf(Constants.Menu_CheckJobs) > 0)
+            {
+                strReturn = CheckJobs(jsonGrpMsg, strMessage);
+            }
+            else if (strMessage.IndexOf(Constants.Menu_SelectJobs) > 0)
+            {
+                strReturn = SelectJobs(jsonGrpMsg, strMessage);
+            }
+            else if (strMessage.IndexOf(Constants.Menu_ChangeName) > 0)
+            {
+                strReturn = ChangeName(jsonGrpMsg, strMessage);
+            }
+            //else if (strMessage.IndexOf("理智检定") > 0)
+            //{
+            //    strReturn = SanCheck(jsonGrpMsg, strMessage);
+            //}
             else if (strMessage.IndexOf("检定") > 0)
             {
                 strReturn = Checkout(jsonGrpMsg, strMessage);
@@ -82,13 +98,158 @@ namespace Bot.CoCRequest
             else
             {
                 strReturn = "目前可用的功能有：\n";
-                strReturn += "车卡，查询，检定，理智增强\n";
+                strReturn += "车卡，查询，检定，" + Constants.Menu_ChangeName + "，";
+                strReturn += Constants.Menu_CheckJobs + "，" + Constants.Menu_SelectJobs + "，理智增强\n";
             }
 
 
             return strReturn;
         }
 
+        private string ChangeName(JORecvGroupMsg jsonGrpMsg, string strMessage)
+        {
+            strMessage = strMessage.Substring(strMessage.IndexOf(Constants.Menu_SelectJobs) + 4).Trim();
+            string[] strArgs = strMessage.Split(' ');
+            string strReturn = string.Empty;
+
+            //查看角色是否存在
+            Character Check = lstChara.Find(Player => Player.Groupid == jsonGrpMsg.group_id && Player.Userid == jsonGrpMsg.sender.user_id);
+            if (Check == null)
+            {
+                strReturn = "您在本群还没有建立角色，请使用「CoC 车卡」来创建角色";
+                return strReturn;
+            }
+
+
+            if (strArgs.Length >= 1 && !string.IsNullOrEmpty(strArgs[0]))
+            {
+                string strOldName = Check.NickName;
+                Check.NickName = strArgs[0];
+                Constants.OutputJsonFile(Constants.Path_Characters, JsonConvert.SerializeObject(lstChara, Formatting.Indented));
+
+                strReturn = strOldName + "把名字改为了：" + Check.NickName;
+            }
+            else
+            {
+                strReturn += "人总得有个名字，请在命令后输入自己想要的名字。";
+            }
+
+            return strReturn;
+        }
+
+        private string SelectJobs(JORecvGroupMsg jsonGrpMsg, string strMessage)
+        {
+            strMessage = strMessage.Substring(strMessage.IndexOf(Constants.Menu_SelectJobs) + 4).Trim();
+            string[] strArgs = strMessage.Split(' ');
+            string strReturn = string.Empty;
+
+            //查看角色是否存在
+            Character Check = lstChara.Find(Player => Player.Groupid == jsonGrpMsg.group_id && Player.Userid == jsonGrpMsg.sender.user_id);
+            if (Check == null)
+            {
+                strReturn = "您在本群还没有建立角色，请使用「CoC 车卡」来创建角色";
+                return strReturn;
+            }
+
+            if (strArgs.Length >= 1 && !string.IsNullOrEmpty(strArgs[0]))
+            {
+                Job tar = ConstInfo.lstJobs.Find(X => X.Name == strArgs[0]);
+                if (tar != null)
+                {
+                    Constants.SelectJob(Check, tar);
+
+                    Constants.OutputJsonFile(Constants.Path_Characters, JsonConvert.SerializeObject(lstChara, Formatting.Indented));
+                    strReturn = Check.NickName + "当前职业为：" + Check.Job + " 本职技能点：" + Check.MainSkillPoint;
+                }
+                else
+                {
+                    strReturn += "选择职业要慎重，可以先输入「CoC " + Constants.Menu_CheckJobs + "」来确认职业名称";
+                }
+            }
+            else
+            {
+                strReturn += "请输入选择的职业名称，不知道可以先「CoC " + Constants.Menu_CheckJobs + "」一下来确认职业名称";
+            }
+
+            return strReturn;
+        }
+
+        private string CheckJobs(JORecvGroupMsg jsonGrpMsg, string strMessage)
+        {
+            strMessage = strMessage.Substring(strMessage.IndexOf(Constants.Menu_CheckJobs) + 4).Trim();
+            string[] strArgs = strMessage.Split(' ');
+            string strReturn = string.Empty;
+
+            if (strArgs.Length >= 1 && !string.IsNullOrEmpty(strArgs[0]))
+            {
+                Job tar = ConstInfo.lstJobs.Find(X => X.Name == strArgs[0]);
+                if (tar != null)
+                {
+                    strReturn += "职业名称：" + tar.Name + "\n";
+                    strReturn += "本职技能：" + tar.Description + "\n";
+                    strReturn += "信用评级：" + tar.CreditMin + " - " + tar.CreditMax + "\n";
+                    strReturn += "技能点计算公式：" + tar.SkillPointMemo + "\n";
+                }
+                else
+                {
+                    strReturn += "没找到你说的职业，随便给你翻一个吧。\n";
+                    DiceResult dice = Constants.RollDices(1, ConstInfo.lstJobs.Count);
+                    tar = ConstInfo.lstJobs[dice.Point - 1];
+                    strReturn += "职业名称：" + tar.Name + "\n";
+                    strReturn += "本职技能：" + tar.Description + "\n";
+                    strReturn += "信用评级：" + tar.CreditMin + " - " + tar.CreditMax + "\n";
+                    strReturn += "技能点计算公式：" + tar.SkillPointMemo + "\n";
+                }
+            }
+            else
+            {
+                strReturn += "可选职业有" + ConstInfo.lstJobs.Count + "种，包括：\n";
+                foreach (Job job in ConstInfo.lstJobs)
+                {
+                    strReturn += job.Name + "，";
+                }
+                strReturn = strReturn.TrimEnd('，');
+            }
+
+            return strReturn;
+        }
+        private string SanCheck(JORecvGroupMsg jsonGrpMsg, string strMessage)
+        {
+            strMessage = strMessage.Substring(strMessage.IndexOf("理智检定") + 4).Trim();
+            string[] strArgs = strMessage.Split(' ');
+            string strReturn = string.Empty;
+
+            //查看角色是否存在
+            Character Check = lstChara.Find(Player => Player.Groupid == jsonGrpMsg.group_id && Player.Userid == jsonGrpMsg.sender.user_id);
+            if (Check == null)
+            {
+                strReturn = "您在本群还没有建立角色，请使用「CoC 车卡」来创建角色";
+                return strReturn;
+            }
+
+            DiceResult dice;
+            string strProp = string.Empty;
+            int nStatus = 0;
+            //检测参数处理
+            if (strArgs.Length >= 1 && !string.IsNullOrEmpty(strArgs[0]))
+            {
+                if (Constants.dicKeywords.ContainsKey(strArgs[0]))
+                {
+
+                }
+                else
+                {
+                }
+            }
+            //默认快速处理
+            else
+            {
+
+            }
+
+
+            return strReturn;
+        }
         private string Checkout(JORecvGroupMsg jsonGrpMsg, string strMessage)
         {
             strMessage = strMessage.Substring(strMessage.IndexOf("检定") + 2).Trim();
@@ -128,7 +289,7 @@ namespace Bot.CoCRequest
             {
                 //随机抽一个
                 dice = Constants.RollDices(1, Constants.dicKeywords.Count);
-                strProp = Constants.dicKeywords.Keys.ToList()[dice.Point];
+                strProp = Constants.dicKeywords.Keys.ToList()[dice.Point - 1];
                 strReturn += "你没说要检定的内容，那就测个" + strProp + "吧\n";
                 //扔个属性
                 nStatus = Constants.GetPropValue(Check, Constants.dicKeywords[strProp]);
@@ -179,6 +340,18 @@ namespace Bot.CoCRequest
             string[] strArgs = strMessage.Split(' ');
             string strReturn = string.Empty;
 
+            string strSeed = DateTime.Now.ToString("yyyyMMdd") + jsonGrpMsg.group_id.ToString() + jsonGrpMsg.sender.user_id.ToString();
+
+            if (lstSeed.Contains(strSeed))
+            {
+                strReturn = "因为建人太刷屏了，所以每天只可以建一次\n";
+                return strReturn;
+            }
+            else
+            {
+                lstSeed.Add(strSeed);
+            }
+
             Character Check = lstChara.Find(Player => Player.Groupid == jsonGrpMsg.group_id && Player.Userid == jsonGrpMsg.sender.user_id);
             if (Check != null)
             {
@@ -222,20 +395,18 @@ namespace Bot.CoCRequest
 
             Constants.OutputJsonFile(Constants.Path_Characters, JsonConvert.SerializeObject(lstChara, Formatting.Indented));
             strReturn += Chara.CreateLog + Chara.ToString();
+
             return strReturn;
         }
-
-
-
 
         string IMessageRequest.DealPrivateRequest(JORecvGroupMsg jsonGrpMsg)
         {
             string strMessage = jsonGrpMsg.message;
             string strReturn = string.Empty;
 
-            while (regCQCode.IsMatch(strMessage))
+            while (Constants.regCQCode.IsMatch(strMessage))
             {
-                strMessage = regCQCode.Replace(strMessage, "");
+                strMessage = Constants.regCQCode.Replace(strMessage, "");
             }
 
             if (strMessage.IndexOf("检定") > 0)

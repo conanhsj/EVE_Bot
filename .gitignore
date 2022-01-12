@@ -2,3 +2,6 @@
 EVE_Bot/bin/
 EVE_Bot/obj/
 packages/
+*.pdb
+*.cache
+Debug

@@ -24,6 +24,17 @@ namespace EVE_Bot.AILogic
         private static List<WormholeSystem> lstWormholeSystem = JsonConvert.DeserializeObject<List<WormholeSystem>>(FilesHelper.ReadJsonFile(@"EVE\Wormhole"));
         private static List<Wormhole> lstWormhole = JsonConvert.DeserializeObject<List<Wormhole>>(FilesHelper.ReadJsonFile(@"EVE\Hole"));
         private static List<Solar> lstSolar = JsonConvert.DeserializeObject<List<Solar>>(FilesHelper.ReadJsonFile(@"EVE\UniverseSystem"));
+        private static List<Reward> lstRewards = ReadRewards();
+
+        private static List<Reward> ReadRewards()
+        {
+            string strContents = FilesHelper.ReadJsonFile(@"EVE\Rewards");
+            if (string.IsNullOrEmpty(strContents))
+            {
+                return new List<Reward>();
+            }
+            return JsonConvert.DeserializeObject<List<Reward>>(strContents);
+        }
 
         public static string DealSearchRequest(ClientWebSocket ws, JORecvGroupMsg jsonGrpMsg)
         {
@@ -80,7 +91,7 @@ namespace EVE_Bot.AILogic
             }
             else
             {
-                strMessage += "[CQ:at,qq=" + jsonGrpMsg.sender.user_id + "]？有问题查帮助啊";
+                strMessage += "[CQ:at,qq=" + jsonGrpMsg.sender.user_id + "]？有问题请输入「!帮助」";
             }
             return strMessage;
         }
@@ -332,6 +343,13 @@ namespace EVE_Bot.AILogic
             }
             else if (lstTypeID.Count < 40)
             {
+                //foreach (string strKey in lstTypeID)
+                //{
+                //    Item target = lstSearch.Find(Item => Item.TypeID == strKey);
+                //    strMessage += target.Name + strKey + "\n";
+                //    return strMessage;
+                //}
+
                 //查询价格
                 Dictionary<string, Price> dicResult = CEVEMarket.SearchPriceJson(lstTypeID);
                 Dictionary<string, Price> dicNameResult = new Dictionary<string, Price>();
@@ -343,7 +361,9 @@ namespace EVE_Bot.AILogic
                     }
                     //输出模板
                     Item target = lstSearch.Find(Item => Item.TypeID == strKey);
+
                     dicNameResult.Add(target.Name, dicResult[strKey]);
+
                 }
 
                 //寻找最长名字
@@ -509,9 +529,19 @@ namespace EVE_Bot.AILogic
             if (lstResult.Count > 0 && lstResult.Count < 20)
             {
                 strMessage += "\n";
+                lstRewards = ReadRewards();
                 foreach (WormholeSystem WH in lstResult)
                 {
                     strMessage += WH.Name + " 等级：" + WH.Class + " 天象：" + (WH.Effects == string.Empty ? "None" : WH.Effects) + " 永联：" + WH.Statics + "\n";
+                    List<Reward> rewards = lstRewards.FindAll(X => X.Name.Contains(strRequest.ToUpper()));
+                    if (rewards.Count > 0)
+                    {
+                        strMessage += "好像有人在找这个洞：\n";
+                        foreach (Reward reward in rewards)
+                        {
+                            strMessage += ((int)(DateTime.Now - reward.Date).TotalDays).ToString() + "天前 " + reward.Memo + "\n";
+                        }
+                    }
                 }
                 strMessage.Trim('\n');
             }

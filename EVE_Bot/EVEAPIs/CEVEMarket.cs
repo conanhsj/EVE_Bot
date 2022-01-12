@@ -63,7 +63,8 @@ namespace EVE_Bot.EVEAPIs
                     Price result = JsonConvert.DeserializeObject<Price>(strJson);
 
 
-                    if (result.sell.min != 0 && Cached.sell.min > result.sell.min)
+                    if (Cached.sell.min == 0 || 
+                       (result.sell.min != 0 && Cached.sell.min > result.sell.min))
                     {
                         Cached.sell = result.sell;
                         Cached.sell.place = "皮";
